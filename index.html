@@ -170,11 +170,154 @@
         opacity: 0; transition: opacity 0.2s; z-index: 1000;
     }
     .loading-indicator.show { opacity: 1; }
+
+    /* ================= ЭКРАН АВТОРИЗАЦИИ ================= */
+    .auth-screen {
+        display: none;
+        min-height: calc(100vh - 40px);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
+    }
+    .auth-screen.show { display: flex; }
+    .auth-container {
+        background: var(--card-bg);
+        border-radius: 16px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        padding: 32px;
+        width: 100%;
+        max-width: 440px;
+    }
+    .auth-container h1 {
+        text-align: center;
+        margin-bottom: 22px;
+        font-size: 1.35rem;
+        font-weight: 700;
+    }
+    .auth-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 22px;
+        border-bottom: 1px solid var(--border);
+    }
+    .auth-tab {
+        flex: 1;
+        padding: 12px 8px;
+        border: none;
+        background: none;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #888;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: color 0.2s, border-color 0.2s;
+    }
+    .auth-tab:hover { color: var(--text); }
+    .auth-tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+    }
+    .auth-form { display: none; }
+    .auth-form.active { display: block; }
+    .auth-field { margin-bottom: 14px; }
+    .auth-field label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+        color: #555;
+        font-weight: 600;
+    }
+    .auth-field input {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-size: 1rem;
+        font-family: inherit;
+    }
+    .auth-field input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(52,152,219,0.15);
+    }
+    .auth-submit {
+        width: 100%;
+        padding: 14px;
+        font-size: 1rem;
+        margin-top: 6px;
+    }
+    .auth-error {
+        color: var(--danger);
+        font-size: 0.9rem;
+        margin-top: 12px;
+        text-align: center;
+        min-height: 20px;
+        font-weight: 500;
+    }
+    .auth-hint {
+        text-align: center;
+        font-size: 0.82rem;
+        color: #888;
+        margin-top: 14px;
+    }
 </style>
 </head>
 <body>
 <div class="loading-indicator" id="loadingIndicator">Загрузка…</div>
-<div class="container">
+
+<!-- ================= ЭКРАН АВТОРИЗАЦИИ / РЕГИСТРАЦИИ ================= -->
+<div class="auth-screen" id="authScreen">
+    <div class="auth-container">
+        <h1>🥗 Мой планировщик питания</h1>
+
+        <div class="auth-tabs">
+            <button class="auth-tab active" data-auth-tab="login" onclick="switchAuthTab('login')">Вход</button>
+            <button class="auth-tab" data-auth-tab="register" onclick="switchAuthTab('register')">Регистрация</button>
+        </div>
+
+        <!-- Форма входа -->
+        <div class="auth-form active" id="authLoginForm">
+            <div class="auth-field">
+                <label>Номер телефона</label>
+                <input type="tel" id="authLoginPhone" placeholder="+7 (999) 123-45-67" autocomplete="tel"
+                       onkeydown="if(event.key==='Enter')doAuthLogin()">
+            </div>
+            <div class="auth-field">
+                <label>Пароль</label>
+                <input type="password" id="authLoginPassword" placeholder="Пароль" autocomplete="current-password"
+                       onkeydown="if(event.key==='Enter')doAuthLogin()">
+            </div>
+            <button class="primary-btn auth-submit" onclick="doAuthLogin()">Войти</button>
+            <div class="auth-error" id="authLoginError"></div>
+        </div>
+
+        <!-- Форма регистрации -->
+        <div class="auth-form" id="authRegisterForm">
+            <div class="auth-field">
+                <label>Имя</label>
+                <input type="text" id="authRegName" placeholder="Как вас зовут" autocomplete="name">
+            </div>
+            <div class="auth-field">
+                <label>Номер телефона</label>
+                <input type="tel" id="authRegPhone" placeholder="+7 (999) 123-45-67" autocomplete="tel"
+                       onkeydown="if(event.key==='Enter')doAuthRegister()">
+            </div>
+            <div class="auth-field">
+                <label>Пароль</label>
+                <input type="password" id="authRegPassword" placeholder="Пароль" autocomplete="new-password"
+                       onkeydown="if(event.key==='Enter')doAuthRegister()">
+            </div>
+            <button class="primary-btn auth-submit" onclick="doAuthRegister()">Зарегистрироваться</button>
+            <div class="auth-error" id="authRegError"></div>
+            <div class="auth-hint">После входа вы останетесь в системе на 7 дней.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= ОСНОВНОЙ ИНТЕРФЕЙС ================= -->
+<div class="container" id="mainApp" style="display:none">
     <h1>🥗 Мой планировщик питания</h1>
 
     <nav class="tabs">
@@ -216,6 +359,9 @@ const LS = {
     saveUserData: (id, v) => localStorage.setItem('user_data_' + id, JSON.stringify(v)),
     clearUserData: (id) => localStorage.removeItem('user_data_' + id),
 };
+
+// Длительность сессии — 7 суток (в миллисекундах)
+const SESSION_DURATION = 7 * 24 * 60 * 60 * 1000;
 
 // ======================================================================
 //  Состояние
@@ -261,6 +407,55 @@ function showLoading(on) {
 }
 
 // ======================================================================
+//  Экран авторизации / основной интерфейс
+// ======================================================================
+function showAuthScreen() {
+    document.getElementById('authScreen').classList.add('show');
+    document.getElementById('mainApp').style.display = 'none';
+}
+function showMainApp() {
+    document.getElementById('authScreen').classList.remove('show');
+    document.getElementById('mainApp').style.display = 'block';
+}
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.authTab === tab));
+    document.getElementById('authLoginForm').classList.toggle('active', tab === 'login');
+    document.getElementById('authRegisterForm').classList.toggle('active', tab === 'register');
+    document.getElementById('authLoginError').textContent = '';
+    document.getElementById('authRegError').textContent = '';
+}
+
+async function doAuthLogin() {
+    const phone = document.getElementById('authLoginPhone').value.trim();
+    const password = document.getElementById('authLoginPassword').value;
+    const errEl = document.getElementById('authLoginError');
+    errEl.textContent = '';
+    if (!phone || !password) { errEl.textContent = 'Введите телефон и пароль'; return; }
+    try {
+        const user = await loginUser(phone, password);
+        await activateUser(user);
+    } catch (e) {
+        errEl.textContent = 'Ошибка входа: ' + e.message;
+    }
+}
+
+async function doAuthRegister() {
+    const phone = document.getElementById('authRegPhone').value.trim();
+    const password = document.getElementById('authRegPassword').value;
+    const name = document.getElementById('authRegName').value.trim();
+    const errEl = document.getElementById('authRegError');
+    errEl.textContent = '';
+    if (!phone || !password) { errEl.textContent = 'Введите телефон и пароль'; return; }
+    try {
+        const user = await createUser({ phone, password, name });
+        await activateUser(user);
+    } catch (e) {
+        errEl.textContent = 'Ошибка регистрации: ' + e.message;
+    }
+}
+
+// ======================================================================
 //  Хранилище пользователей (API + fallback)
 // ======================================================================
 async function fetchUsers() {
@@ -276,7 +471,6 @@ async function loginUser(phone, password) {
     showLoading(true);
     try { return await api('/login', { method: 'POST', body: JSON.stringify({ phone, password }) }); }
     catch (e) {
-        // Если сервер вернул ошибку валидации - пробрасываем
         if (e.message && e.message !== 'Failed to fetch' && !e.message.includes('fetch')) throw e;
         const users = LS.users();
         const u = users.find(x => x.phone === phone && x.password === password);
@@ -370,9 +564,16 @@ async function doRegister() {
 async function activateUser(user) {
     state.currentUser = user;
     localStorage.setItem('currentUserId', user.id);
+    // Отметка времени для 7-дневной сессии
+    localStorage.setItem('authTimestamp', Date.now().toString());
     await loadUserData();
-    renderAll();
-    location.hash = '#users';
+    showMainApp();
+    // Навигация на вкладку пользователей (как в оригинале)
+    if (location.hash === '#users') {
+        showSection();
+    } else {
+        location.hash = '#users'; // вызовет hashchange → showSection
+    }
 }
 
 async function promptSwitchUser(userId) {
@@ -391,9 +592,11 @@ async function promptSwitchUser(userId) {
 async function logout() {
     state.currentUser = null;
     localStorage.removeItem('currentUserId');
+    localStorage.removeItem('authTimestamp');
     state.profile = {}; state.products = []; state.days = {};
     editingProductId = null;
     renderAll();
+    showAuthScreen();
     location.hash = '#users';
 }
 
@@ -532,7 +735,6 @@ async function saveProfile() {
     Object.entries(profileFields).forEach(([key, id]) => {
         state.profile[key] = document.getElementById(id).value.trim();
     });
-    // синхронизируем имя с пользователем
     if (state.profile.name && state.currentUser) {
         state.currentUser.name = state.profile.name;
         const u = state.users.find(x => x.id === state.currentUser.id);
@@ -645,7 +847,6 @@ function renderProducts() {
     if (state.products.length === 0) {
         html += `<div class="empty-msg">Список пуст. Добавьте продукты выше.</div>`;
     } else {
-        // Группировка по магазинам (в алфавитном порядке)
         const groups = {};
         state.products.forEach(p => {
             const key = (p.store || '').trim() || '— Без магазина —';
@@ -994,18 +1195,50 @@ window.addEventListener('hashchange', showSection);
 // ======================================================================
 async function init() {
     state.users = await fetchUsers();
+
     const savedId = parseInt(localStorage.getItem('currentUserId'));
-    if (savedId) {
-        const u = state.users.find(x => x.id === savedId);
-        if (u) {
-            state.currentUser = u;
-            await loadUserData();
-        } else {
-            localStorage.removeItem('currentUserId');
-        }
+    let authTs = parseInt(localStorage.getItem('authTimestamp') || '0');
+
+    // Обратная совместимость: если пользователь был залогинен до появления 7-дневной сессии
+    if (savedId && !authTs) {
+        authTs = Date.now();
+        localStorage.setItem('authTimestamp', authTs.toString());
     }
+
+    const sessionValid = savedId && authTs && (Date.now() - authTs < SESSION_DURATION);
+
+    let sessionExpired = false;
+    let user = null;
+
+    if (sessionValid) {
+        user = state.users.find(x => x.id === savedId);
+        if (!user) {
+            // Пользователь удалён — сбрасываем сессию
+            localStorage.removeItem('currentUserId');
+            localStorage.removeItem('authTimestamp');
+        }
+    } else if (savedId) {
+        // Сессия истекла
+        sessionExpired = true;
+        localStorage.removeItem('currentUserId');
+        localStorage.removeItem('authTimestamp');
+    }
+
+    if (user) {
+        state.currentUser = user;
+        await loadUserData();
+        showMainApp();
+    } else {
+        showAuthScreen();
+    }
+
     if (!location.hash) location.hash = '#users';
     showSection();
+
+    if (sessionExpired) {
+        const err = document.getElementById('authLoginError');
+        if (err) err.textContent = 'Срок сессии истёк (7 дней). Войдите снова.';
+    }
 }
 
 init();

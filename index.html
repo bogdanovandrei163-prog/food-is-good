@@ -312,9 +312,8 @@ const STORAGE_ACCOUNTS = 'np_accounts_v2';
 const STORAGE_SESSION  = 'np_session_v2';
 const STORAGE_DATA     = 'np_data_v2';
 
-// Текущее состояние
-let currentAccount = null;   // username залогиненного аккаунта
-let accountData    = null;   // данные текущего аккаунта
+let currentAccount = null;
+let accountData    = null;
 
 /* ============================================================
    УТИЛИТЫ
@@ -333,7 +332,7 @@ function escapeHtml(s) {
 }
 
 /* ============================================================
-   ХРАНИЛИЩЕ — низкоуровневые функции
+   ХРАНИЛИЩЕ
    ============================================================ */
 function loadAccounts() {
     try { return JSON.parse(localStorage.getItem(STORAGE_ACCOUNTS)) || []; }
@@ -346,46 +345,51 @@ function loadSession() {
     try { return JSON.parse(localStorage.getItem(STORAGE_SESSION)) || null; }
     catch (e) { return null; }
 }
-function saveSession(s) {
-    localStorage.setItem(STORAGE_SESSION, JSON.stringify(s));
-}
-function clearSession() {
-    localStorage.removeItem(STORAGE_SESSION);
-}
+function saveSession(s) { localStorage.setItem(STORAGE_SESSION, JSON.stringify(s)); }
+function clearSession() { localStorage.removeItem(STORAGE_SESSION); }
 function loadAllData() {
     try { return JSON.parse(localStorage.getItem(STORAGE_DATA)) || {}; }
     catch (e) { return {}; }
 }
-function saveAllData(data) {
-    localStorage.setItem(STORAGE_DATA, JSON.stringify(data));
-}
+function saveAllData(data) { localStorage.setItem(STORAGE_DATA, JSON.stringify(data)); }
 
 /* ============================================================
-   ДАННЫЕ АККАУНТА
+   СТРУКТУРА МЕНЮ
    ============================================================ */
+// ЕДИНЫЙ СПИСОК ВСЕХ РАЗДЕЛОВ МЕНЮ
 function getDefaultMeals() {
     return {
-        breakfast: { name: 'Завтрак', time: '08:00', items: [] },
-        snack1:    { name: 'Перекус',  time: '11:00', items: [] },
-        lunch:     { name: 'Обед',     time: '14:00', items: [] },
-        snack2:    { name: 'Полдник',  time: '17:00', items: [] },
-        dinner:    { name: 'Ужин',     time: '19:00', items: [] }
+        breakfast: { name: 'Завтрак',  time: '08:00', items: [] },
+        snack1:    { name: 'Перекус 1', time: '11:00', items: [] },
+        lunch:     { name: 'Обед',      time: '14:00', items: [] },
+        snack2:    { name: 'Полдник',   time: '17:00', items: [] },
+        dinner:    { name: 'Ужин',      time: '19:00', items: [] }
     };
+}
+
+// Страховка: если в меню чего-то не хватает — дополняем недостающими разделами
+function ensureDefaultMeals(menu) {
+    const defaults = getDefaultMeals();
+    if (!menu || typeof menu !== 'object') return defaults;
+    Object.keys(defaults).forEach(key => {
+        if (!menu[key] || !Array.isArray(menu[key].items)) {
+            menu[key] = { ...defaults[key] };
+        }
+    });
+    return menu;
 }
 
 function getSampleProducts() {
     return [
-        { id: 1, name: 'Куриная грудка', store: 'Пятерочка', protein: 23.6, fiber: 0,    kcal: 113 },
-        { id: 2, name: 'Гречка (вареная)', store: 'Магнит',  protein: 3.4,  fiber: 2.7,  kcal: 110 },
-        { id: 3, name: 'Яйцо куриное',    store: 'Перекресток', protein: 12.7, fiber: 0, kcal: 143 },
-        { id: 4, name: 'Овсяные хлопья',  store: 'Лента',    protein: 13.1, fiber: 10.6, kcal: 352 }
+        { id: 1, name: 'Куриная грудка',   store: 'Пятерочка',   protein: 23.6, fiber: 0,    kcal: 113 },
+        { id: 2, name: 'Гречка (вареная)', store: 'Магнит',      protein: 3.4,  fiber: 2.7,  kcal: 110 },
+        { id: 3, name: 'Яйцо куриное',     store: 'Перекресток', protein: 12.7, fiber: 0,    kcal: 143 },
+        { id: 4, name: 'Овсяные хлопья',   store: 'Лента',       protein: 13.1, fiber: 10.6, kcal: 352 }
     ];
 }
 
 function initAccountData(username) {
     const firstUserId = Date.now();
-
-    // Миграция старых продуктов, если есть
     let products = getSampleProducts();
     try {
         const old = JSON.parse(localStorage.getItem('products'));
@@ -430,13 +434,8 @@ function switchAuthTab(tab) {
 function showAuth() {
     document.getElementById('authScreen').style.display = 'flex';
     document.getElementById('appScreen').style.display  = 'none';
-
-    // Если аккаунтов нет — сразу открываем вкладку регистрации
-    if (loadAccounts().length === 0) {
-        switchAuthTab('register');
-    } else {
-        switchAuthTab('login');
-    }
+    if (loadAccounts().length === 0) switchAuthTab('register');
+    else switchAuthTab('login');
 }
 
 function showApp() {
@@ -451,17 +450,10 @@ function handleLogin(e) {
     e.preventDefault();
     const username = document.getElementById('loginUsername').value.trim();
     const password = document.getElementById('loginPassword').value;
-
     const accounts = loadAccounts();
     const acc = accounts.find(a => a.username === username);
-    if (!acc) {
-        document.getElementById('loginError').textContent = 'Пользователь не найден';
-        return;
-    }
-    if (acc.passwordHash !== simpleHash(password)) {
-        document.getElementById('loginError').textContent = 'Неверный пароль';
-        return;
-    }
+    if (!acc) { document.getElementById('loginError').textContent = 'Пользователь не найден'; return; }
+    if (acc.passwordHash !== simpleHash(password)) { document.getElementById('loginError').textContent = 'Неверный пароль'; return; }
     loginSuccess(username);
 }
 
@@ -478,24 +470,17 @@ function handleRegister(e) {
 
     const accounts = loadAccounts();
     if (accounts.find(a => a.username === username)) {
-        errEl.textContent = 'Такой логин уже существует';
-        return;
+        errEl.textContent = 'Такой логин уже существует'; return;
     }
 
-    accounts.push({
-        username,
-        passwordHash: simpleHash(password),
-        createdAt: Date.now()
-    });
+    accounts.push({ username, passwordHash: simpleHash(password), createdAt: Date.now() });
     saveAccounts(accounts);
 
-    // Инициализация данных для нового аккаунта
     const all = loadAllData();
     if (!all[username]) {
         all[username] = initAccountData(username);
         saveAllData(all);
     }
-
     loginSuccess(username);
 }
 
@@ -504,6 +489,13 @@ function loginSuccess(username) {
     saveSession({ username });
     const all = loadAllData();
     accountData = all[username];
+
+    // Страховка на случай битых данных
+    if (!accountData.menus) accountData.menus = {};
+    accountData.users.forEach(u => {
+        accountData.menus[u.id] = ensureDefaultMeals(accountData.menus[u.id]);
+    });
+
     showApp();
 }
 
@@ -518,7 +510,7 @@ function handleLogout() {
 }
 
 /* ============================================================
-   ПОЛЬЗОВАТЕЛИ (профили питания внутри аккаунта)
+   ПОЛЬЗОВАТЕЛИ
    ============================================================ */
 function showAddUserForm() {
     document.getElementById('addUserForm').style.display = 'block';
@@ -544,6 +536,7 @@ function addUser() {
     };
 
     accountData.users.push(newUser);
+    // ВАЖНО: создаём меню со всеми 5 разделами
     accountData.menus[newUser.id] = getDefaultMeals();
     if (!accountData.activeUserId) accountData.activeUserId = newUser.id;
 
@@ -555,8 +548,7 @@ function addUser() {
 
 function deleteUser(userId) {
     if (accountData.users.length <= 1) {
-        alert('Нельзя удалить единственного пользователя');
-        return;
+        alert('Нельзя удалить единственного пользователя'); return;
     }
     const user = accountData.users.find(u => u.id === userId);
     if (!confirm(`Удалить пользователя «${user ? user.name : ''}» и его меню?`)) return;
@@ -585,7 +577,6 @@ function renderUsers() {
         container.innerHTML = '<div class="empty-msg">Нет пользователей. Добавьте первого.</div>';
         return;
     }
-
     let html = '<div class="users-grid">';
     accountData.users.forEach(u => {
         const isActive = u.id === accountData.activeUserId;
@@ -613,14 +604,14 @@ function renderUsers() {
    ============================================================ */
 function getActiveMeals() {
     if (!accountData.activeUserId) return null;
-    if (!accountData.menus[accountData.activeUserId]) {
-        accountData.menus[accountData.activeUserId] = getDefaultMeals();
-    }
+    // Страховка: всегда дополняем недостающие разделы
+    accountData.menus[accountData.activeUserId] =
+        ensureDefaultMeals(accountData.menus[accountData.activeUserId]);
     return accountData.menus[accountData.activeUserId];
 }
 
 /* ============================================================
-   ПРОДУКТЫ (общие для аккаунта)
+   ПРОДУКТЫ
    ============================================================ */
 function addProduct() {
     const name    = document.getElementById('prodName').value.trim();
@@ -634,7 +625,6 @@ function addProduct() {
     accountData.products.push({ id: Date.now(), name, store, protein, fiber, kcal });
     persistData();
     renderAll();
-
     ['prodName','prodStore','prodProtein','prodFiber','prodKcal']
         .forEach(id => document.getElementById(id).value = '');
 }
@@ -642,15 +632,12 @@ function addProduct() {
 function deleteProduct(id) {
     if (!confirm('Удалить продукт из справочника?')) return;
     accountData.products = accountData.products.filter(p => p.id !== id);
-
-    // Убираем из меню всех пользователей аккаунта
     Object.keys(accountData.menus).forEach(userId => {
         const menu = accountData.menus[userId];
         Object.keys(menu).forEach(mealKey => {
             menu[mealKey].items = menu[mealKey].items.filter(i => i.productId !== id);
         });
     });
-
     persistData();
     renderAll();
 }
@@ -700,7 +687,6 @@ function addItemToMeal(mealKey) {
     meals[mealKey].items.push({ productId: product.id, grams });
     persistData();
     renderAll();
-
     gramsInput.value = '';
     select.value = '';
 }
@@ -734,7 +720,6 @@ function renderMeals() {
     const container = document.getElementById('mealsContainer');
     const meals = getActiveMeals();
 
-    // Обновляем подпись активного пользователя
     const activeUser = accountData.users.find(u => u.id === accountData.activeUserId);
     document.getElementById('activeUserLabel').textContent =
         activeUser ? `— ${activeUser.name}` : '';
@@ -823,7 +808,6 @@ function updateDaySummary() {
     document.getElementById('totalFiber').textContent   = totalFiber.toFixed(1);
     document.getElementById('totalKcal').textContent    = totalKcal.toFixed(0);
 
-    // Цели активного пользователя
     const u = accountData.users.find(usr => usr.id === accountData.activeUserId);
     document.getElementById('targetProtein').textContent = (u && u.targetProtein) ? `цель: ${u.targetProtein} г` : '';
     document.getElementById('targetFiber').textContent   = (u && u.targetFiber)   ? `цель: ${u.targetFiber} г`   : '';
@@ -840,7 +824,7 @@ function renderAll() {
 }
 
 /* ============================================================
-   ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
+   ИНИЦИАЛИЗАЦИЯ
    ============================================================ */
 (function init() {
     const session  = loadSession();
@@ -851,11 +835,14 @@ function renderAll() {
         if (all[session.username]) {
             currentAccount = session.username;
             accountData    = all[session.username];
+            if (!accountData.menus) accountData.menus = {};
+            accountData.users.forEach(u => {
+                accountData.menus[u.id] = ensureDefaultMeals(accountData.menus[u.id]);
+            });
             showApp();
             return;
         }
     }
-    // Сессия невалидна или отсутствует
     clearSession();
     showAuth();
 })();

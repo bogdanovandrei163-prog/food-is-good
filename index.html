@@ -1,362 +1,1014 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой планировщик питания</title>
-    <style>
-        :root {
-            --bg: #f4f7f6;
-            --card-bg: #ffffff;
-            --text: #2c3e50;
-            --accent: #3498db;
-            --accent-hover: #2980b9;
-            --border: #e0e6ed;
-            --danger: #e74c3c;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            padding: 20px;
-            line-height: 1.5;
-        }
-        .container { max-width: 1100px; margin: 0 auto; }
-        h1 { text-align: center; margin-bottom: 25px; color: var(--text); font-weight: 700; }
-        h2 { margin-bottom: 15px; font-size: 1.3rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-        .form-grid input, .form-grid select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 0.95rem;
-        }
-        .form-grid button {
-            padding: 10px 15px;
-            background: var(--accent);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        .form-grid button:hover { background: var(--accent-hover); }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-        th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #f8fafc; font-weight: 600; }
-        .meal-section { margin-bottom: 25px; }
-        .meal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #eaf2f8;
-            padding: 8px 12px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-        .meal-total { font-size: 0.9rem; color: #555; }
-        .add-item-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-            flex-wrap: wrap;
-        }
-        .add-item-row select, .add-item-row input {
-            padding: 8px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 0.9rem;
-        }
-        .add-item-row button {
-            padding: 8px 12px;
-            background: #2ecc71;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        .day-summary {
-            background: #2c3e50;
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-top: 20px;
-        }
-        .summary-item { text-align: center; }
-        .summary-item .label { font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
-        .summary-item .value { font-size: 1.8rem; font-weight: 700; }
-        .delete-btn {
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-        .empty-msg { color: #888; font-style: italic; padding: 10px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мой планировщик питания</title>
+<style>
+    :root {
+        --bg: #f4f7f6;
+        --card-bg: #ffffff;
+        --text: #2c3e50;
+        --accent: #3498db;
+        --accent-hover: #2980b9;
+        --border: #e0e6ed;
+        --danger: #e74c3c;
+        --success: #2ecc71;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 25px; font-weight: 700; }
+    h2 { margin-bottom: 15px; font-size: 1.3rem; border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+    .card {
+        background: var(--card-bg); border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        padding: 20px; margin-bottom: 20px; border: 1px solid var(--border);
+    }
+    .form-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px; margin-bottom: 15px;
+    }
+    .form-grid input, .form-grid select {
+        width: 100%; padding: 10px; border: 1px solid var(--border);
+        border-radius: 8px; font-size: 0.95rem;
+    }
+    .form-grid button, .primary-btn {
+        padding: 10px 15px; background: var(--accent); color: white;
+        border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
+        font-size: 0.95rem; transition: background 0.2s;
+    }
+    .form-grid button:hover, .primary-btn:hover { background: var(--accent-hover); }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #f8fafc; font-weight: 600; font-size: 0.85rem; }
+    .empty-msg { color: #888; font-style: italic; padding: 10px; }
+    .delete-btn {
+        background: var(--danger); color: white; border: none; border-radius: 4px;
+        padding: 4px 8px; cursor: pointer; font-size: 0.8rem;
+    }
+    .small-btn {
+        padding: 6px 12px; border: 1px solid var(--border); background: white;
+        color: var(--text); border-radius: 6px; cursor: pointer;
+        font-size: 0.85rem; font-weight: 600;
+    }
+    .small-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+    .tabs {
+        display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 25px;
+    }
+    .tab {
+        padding: 10px 20px; border: 1px solid var(--border); background: var(--card-bg);
+        color: var(--text); border-radius: 999px; cursor: pointer; font-size: 1rem;
+        font-weight: 600; text-decoration: none; transition: background 0.2s, color 0.2s;
+    }
+    .tab:hover { background: #eaf2f8; }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .section { display: none; }
+    .section.active { display: block; }
+    .form-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; color: #555; }
+    .norms { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+    .norm { background: #eaf2f8; border-radius: 10px; padding: 15px; text-align: center; }
+    .norm .label { font-size: 0.8rem; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+    .norm .value { font-size: 1.6rem; font-weight: 700; }
+    .saved-msg { color: var(--success); font-weight: 600; margin-left: 10px; opacity: 0; transition: opacity 0.3s; }
+    .saved-msg.show { opacity: 1; }
+    .breadcrumbs { margin-bottom: 15px; font-size: 0.95rem; color: #555; }
+    .breadcrumbs a { color: var(--accent); text-decoration: none; }
+    .breadcrumbs a:hover { text-decoration: underline; }
+    .week-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 15px; font-size: 0.9rem; }
+    .week-toolbar input { padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+    .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+    .tile {
+        display: block; background: #f8fafc; border: 1px solid var(--border);
+        border-radius: 10px; padding: 14px; color: var(--text);
+        text-decoration: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .tile:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,0.15); }
+    .tile.current { border-color: var(--accent); background: #eaf2f8; }
+    .tile-title { font-weight: 700; margin-bottom: 4px; }
+    .tile-sub { font-size: 0.85rem; color: #666; }
+    .tile-badge {
+        display: inline-block; font-size: 0.75rem; background: var(--accent);
+        color: white; border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle;
+    }
+    .tile-meals { list-style: none; margin-top: 8px; font-size: 0.85rem; }
+    .tile-meals li { padding: 2px 0; border-top: 1px dashed var(--border); }
+    .tile-meals .time { color: #888; margin-right: 6px; font-variant-numeric: tabular-nums; }
+
+    /* Меню: карточки приёмов пищи */
+    .meal-card {
+        background: #ffffff;
+        border: 2px solid #c8d6e5;
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .meal-card .meal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-bottom: 10px; margin-bottom: 12px;
+        border-bottom: 1px solid #e0e6ed;
+        font-weight: 700; font-size: 1.05rem;
+        background: none; border-radius: 0;
+    }
+    .meal-header input[type="time"] {
+        padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px;
+        font-size: 0.9rem; margin-left: 6px;
+    }
+    .meal-total { font-size: 0.85rem; color: #555; font-weight: 500; }
+    .meal-fields { display: grid; gap: 10px; margin-bottom: 10px; }
+    .meal-fields label { font-size: 0.85rem; color: #555; display: flex; flex-direction: column; gap: 4px; }
+    .meal-fields input[type="text"], .meal-fields textarea {
+        padding: 8px; border: 1px solid var(--border); border-radius: 6px;
+        font-size: 0.95rem; font-family: inherit;
+    }
+    .meal-fields textarea { min-height: 110px; resize: vertical; }
+    .recipe-text {
+        white-space: pre-wrap; background: #fafbfc; border: 1px solid var(--border);
+        border-radius: 6px; padding: 10px; font-size: 0.95rem;
+    }
+    .recipe-actions { display: flex; gap: 8px; margin-top: 6px; }
+    .add-item-row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .add-item-row select, .add-item-row input {
+        padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem;
+    }
+    .add-item-row button {
+        padding: 8px 14px; background: var(--success); color: white; border: none;
+        border-radius: 6px; cursor: pointer; font-weight: 600;
+    }
+
+    /* Продукты: группировка по магазинам */
+    .store-group { margin-bottom: 18px; }
+    .store-header {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #eaf2f8; padding: 10px 14px;
+        border-radius: 10px 10px 0 0; font-weight: 700;
+        border: 1px solid var(--border); border-bottom: none;
+    }
+    .store-body { border: 1px solid var(--border); border-radius: 0 0 10px 10px; overflow-x: auto; }
+    .store-body table { margin: 0; }
+    .grand-total {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #2c3e50; color: #fff; padding: 16px 20px;
+        border-radius: 12px; font-size: 1.15rem; font-weight: 700; margin-top: 20px;
+    }
+    .day-summary {
+        background: #2c3e50; color: white; padding: 20px; border-radius: 12px;
+        display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-top: 20px;
+    }
+    .summary-item { text-align: center; }
+    .summary-item .label { font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+    .summary-item .value { font-size: 1.8rem; font-weight: 700; }
+    .summary-item .goal { font-size: 0.85rem; opacity: 0.8; }
+    .user-row-actions { display: flex; gap: 6px; }
+    .loading-indicator {
+        position: fixed; top: 12px; right: 12px; background: #2c3e50; color: #fff;
+        padding: 6px 12px; border-radius: 6px; font-size: 0.8rem;
+        opacity: 0; transition: opacity 0.2s; z-index: 1000;
+    }
+    .loading-indicator.show { opacity: 1; }
+</style>
 </head>
 <body>
+<div class="loading-indicator" id="loadingIndicator">Загрузка…</div>
 <div class="container">
     <h1>🥗 Мой планировщик питания</h1>
 
-    <!-- Добавление продукта -->
-    <div class="card">
-        <h2>Добавить продукт в справочник</h2>
-        <div class="form-grid">
-            <input type="text" id="prodName" placeholder="Название продукта">
-            <input type="text" id="prodStore" placeholder="Магазин">
-            <input type="number" id="prodProtein" placeholder="Белок (г) на 100г" step="0.1">
-            <input type="number" id="prodFiber" placeholder="Клетчатка (г) на 100г" step="0.1">
-            <input type="number" id="prodKcal" placeholder="Ккал на 100г" step="1">
-            <button onclick="addProduct()">Добавить продукт</button>
-        </div>
-    </div>
+    <nav class="tabs">
+        <a class="tab" href="#users" data-tab="users">👥 Пользователи</a>
+        <a class="tab" href="#about" data-tab="about">👤 О себе</a>
+        <a class="tab" href="#products" data-tab="products">🛒 Продукты</a>
+        <a class="tab" href="#menu" data-tab="menu">🍽️ Меню</a>
+    </nav>
 
-    <!-- Справочник продуктов -->
-    <div class="card">
-        <h2>Справочник продуктов</h2>
-        <div id="productsList"></div>
-    </div>
-
-    <!-- Меню на день -->
-    <div class="card">
-        <h2>Меню на день</h2>
-        <div id="mealsContainer"></div>
-        <div class="day-summary" id="daySummary">
-            <div class="summary-item"><div class="label">Итого грамм</div><div class="value" id="totalGrams">0</div></div>
-            <div class="summary-item"><div class="label">Белок (г)</div><div class="value" id="totalProtein">0</div></div>
-            <div class="summary-item"><div class="label">Клетчатка (г)</div><div class="value" id="totalFiber">0</div></div>
-            <div class="summary-item"><div class="label">Ккал</div><div class="value" id="totalKcal">0</div></div>
-        </div>
-    </div>
+    <section class="section" id="section-users"></section>
+    <section class="section" id="section-about"></section>
+    <section class="section" id="section-products"></section>
+    <section class="section" id="section-menu"></section>
 </div>
 
 <script>
-    // ---------- ДАННЫЕ ----------
-    let products = JSON.parse(localStorage.getItem('products')) || [
-        { id: 1, name: 'Куриная грудка', store: 'Пятерочка', protein: 23.6, fiber: 0, kcal: 113 },
-        { id: 2, name: 'Гречка (вареная)', store: 'Магнит', protein: 3.4, fiber: 2.7, kcal: 110 },
-        { id: 3, name: 'Яйцо куриное', store: 'Перекресток', protein: 12.7, fiber: 0, kcal: 143 },
-        { id: 4, name: 'Овсяные хлопья', store: 'Лента', protein: 13.1, fiber: 10.6, kcal: 352 }
-    ];
+// ======================================================================
+//  API (Netlify Functions + fallback на localStorage)
+// ======================================================================
+const API_BASE = '/api';
 
-    let meals = JSON.parse(localStorage.getItem('meals')) || {
-        breakfast: { name: 'Завтрак', time: '08:00', items: [] },
-        snack1: { name: 'Перекус', time: '11:00', items: [] },
-        lunch: { name: 'Обед', time: '14:00', items: [] },
-        snack2: { name: 'Полдник', time: '17:00', items: [] },
-        dinner: { name: 'Ужин', time: '19:00', items: [] }
-    };
-
-    // ---------- СОХРАНЕНИЕ ----------
-    function saveData() {
-        localStorage.setItem('products', JSON.stringify(products));
-        localStorage.setItem('meals', JSON.stringify(meals));
+async function api(path, opts = {}) {
+    const res = await fetch(API_BASE + path, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }
+    });
+    if (!res.ok) {
+        let msg = res.statusText;
+        try { msg = (await res.json()).error || msg; } catch {}
+        throw new Error(msg);
     }
+    return res.json();
+}
 
-    // ---------- ПРОДУКТЫ ----------
-    function addProduct() {
-        const name = document.getElementById('prodName').value.trim();
-        const store = document.getElementById('prodStore').value.trim();
-        const protein = parseFloat(document.getElementById('prodProtein').value) || 0;
-        const fiber = parseFloat(document.getElementById('prodFiber').value) || 0;
-        const kcal = parseFloat(document.getElementById('prodKcal').value) || 0;
+const LS = {
+    users:     () => JSON.parse(localStorage.getItem('users') || '[]'),
+    saveUsers: (v) => localStorage.setItem('users', JSON.stringify(v)),
+    userData:  (id) => JSON.parse(localStorage.getItem('user_data_' + id) || 'null'),
+    saveUserData: (id, v) => localStorage.setItem('user_data_' + id, JSON.stringify(v)),
+    clearUserData: (id) => localStorage.removeItem('user_data_' + id),
+};
 
-        if (!name) { alert('Введите название продукта'); return; }
+// ======================================================================
+//  Состояние
+// ======================================================================
+const state = {
+    currentUser: null,     // { id, phone, name }
+    users: [],
+    profile: {},
+    products: [],
+    days: {},
+    loading: 0,
+};
 
-        products.push({ id: Date.now(), name, store, protein, fiber, kcal });
-        saveData();
-        renderAll();
-        // Очистка полей
-        document.getElementById('prodName').value = '';
-        document.getElementById('prodStore').value = '';
-        document.getElementById('prodProtein').value = '';
-        document.getElementById('prodFiber').value = '';
-        document.getElementById('prodKcal').value = '';
+let editingProductId = null;
+let menuWeek = null;
+let menuDay = null;
+const editingRecipes = new Set();
+
+// ======================================================================
+//  Утилиты
+// ======================================================================
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function newId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+const WEEKDAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
+const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+
+function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fromISO(iso) { const [y,m,d] = iso.split('-').map(Number); return new Date(y,m-1,d); }
+function addDays(iso, n) { const d = fromISO(iso); d.setDate(d.getDate()+n); return toISO(d); }
+function mondayOf(iso) { const d = fromISO(iso); return addDays(iso, -((d.getDay()+6) % 7)); }
+function weekdayName(iso) { return WEEKDAYS[(fromISO(iso).getDay()+6) % 7]; }
+function formatDate(iso) { const d = fromISO(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; }
+function formatWeek(monday) { return `${formatDate(monday)} — ${formatDate(addDays(monday,6))}`; }
+
+function showLoading(on) {
+    state.loading += on ? 1 : -1;
+    document.getElementById('loadingIndicator').classList.toggle('show', state.loading > 0);
+}
+
+// ======================================================================
+//  Хранилище пользователей (API + fallback)
+// ======================================================================
+async function fetchUsers() {
+    showLoading(true);
+    try { return await api('/users'); }
+    catch (e) {
+        console.warn('API /users недоступен, fallback на localStorage:', e.message);
+        return LS.users().map(u => ({ id: u.id, phone: u.phone, name: u.name }));
+    } finally { showLoading(false); }
+}
+
+async function loginUser(phone, password) {
+    showLoading(true);
+    try { return await api('/login', { method: 'POST', body: JSON.stringify({ phone, password }) }); }
+    catch (e) {
+        // Если сервер вернул ошибку валидации - пробрасываем
+        if (e.message && e.message !== 'Failed to fetch' && !e.message.includes('fetch')) throw e;
+        const users = LS.users();
+        const u = users.find(x => x.phone === phone && x.password === password);
+        if (!u) throw new Error('Неверный телефон или пароль');
+        return { id: u.id, phone: u.phone, name: u.name };
+    } finally { showLoading(false); }
+}
+
+async function createUser(data) {
+    showLoading(true);
+    try { return await api('/users', { method: 'POST', body: JSON.stringify(data) }); }
+    catch (e) {
+        if (e.message && e.message !== 'Failed to fetch' && !e.message.includes('fetch')) throw e;
+        const users = LS.users();
+        if (users.find(u => u.phone === data.phone)) throw new Error('Пользователь с таким телефоном уже существует');
+        const user = { id: Date.now(), ...data };
+        users.push(user);
+        LS.saveUsers(users);
+        return { id: user.id, phone: user.phone, name: user.name };
+    } finally { showLoading(false); }
+}
+
+async function removeUser(id) {
+    showLoading(true);
+    try { await api(`/users/${id}`, { method: 'DELETE' }); }
+    catch (e) {
+        if (e.message && e.message !== 'Failed to fetch' && !e.message.includes('fetch')) throw e;
+    } finally {
+        LS.saveUsers(LS.users().filter(u => u.id !== id));
+        LS.clearUserData(id);
+        showLoading(false);
     }
+}
 
-    function deleteProduct(id) {
-        if (!confirm('Удалить продукт из справочника?')) return;
-        products = products.filter(p => p.id !== id);
-        // Также удаляем из меню
-        Object.values(meals).forEach(meal => {
-            meal.items = meal.items.filter(item => item.productId !== id);
+async function loadUserData() {
+    if (!state.currentUser) return;
+    showLoading(true);
+    try {
+        const data = await api(`/users/${state.currentUser.id}/data`);
+        state.profile  = data.profile  || {};
+        state.products = data.products || [];
+        state.days     = data.days     || {};
+        LS.saveUserData(state.currentUser.id, {
+            profile: state.profile, products: state.products, days: state.days,
         });
-        saveData();
-        renderAll();
+    } catch (e) {
+        console.warn('API /data недоступен, используем localStorage:', e.message);
+        const cached = LS.userData(state.currentUser.id);
+        state.profile  = cached?.profile  || {};
+        state.products = cached?.products || [];
+        state.days     = cached?.days     || {};
+    } finally { showLoading(false); }
+}
+
+async function saveUserData() {
+    if (!state.currentUser) return;
+    const data = { profile: state.profile, products: state.products, days: state.days };
+    LS.saveUserData(state.currentUser.id, data);
+    try { await api(`/users/${state.currentUser.id}`, { method: 'PATCH', body: JSON.stringify(data) }); }
+    catch (e) { console.warn('Сохранено локально, API недоступен:', e.message); }
+}
+
+// ======================================================================
+//  Пользователи: вход / регистрация / переключение / выход
+// ======================================================================
+async function doLogin() {
+    const phone = document.getElementById('loginPhone').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!phone || !password) { alert('Введите телефон и пароль'); return; }
+    try {
+        const user = await loginUser(phone, password);
+        await activateUser(user);
+    } catch (e) {
+        alert('Ошибка входа: ' + e.message);
+    }
+}
+
+async function doRegister() {
+    const phone = document.getElementById('newPhone').value.trim();
+    const password = document.getElementById('newPassword').value;
+    const name = document.getElementById('newName').value.trim();
+    if (!phone || !password) { alert('Введите телефон и пароль'); return; }
+    try {
+        const user = await createUser({ phone, password, name });
+        await activateUser(user);
+    } catch (e) {
+        alert('Ошибка создания: ' + e.message);
+    }
+}
+
+async function activateUser(user) {
+    state.currentUser = user;
+    localStorage.setItem('currentUserId', user.id);
+    await loadUserData();
+    renderAll();
+    location.hash = '#users';
+}
+
+async function promptSwitchUser(userId) {
+    const pwd = prompt('Введите пароль для входа под этим пользователем:');
+    if (!pwd) return;
+    const u = state.users.find(x => x.id === userId);
+    if (!u) return;
+    try {
+        const logged = await loginUser(u.phone, pwd);
+        await activateUser(logged);
+    } catch (e) {
+        alert('Не удалось войти: ' + e.message);
+    }
+}
+
+async function logout() {
+    state.currentUser = null;
+    localStorage.removeItem('currentUserId');
+    state.profile = {}; state.products = []; state.days = {};
+    editingProductId = null;
+    renderAll();
+    location.hash = '#users';
+}
+
+async function handleDeleteUser(id) {
+    if (!confirm('Удалить пользователя? Все его данные будут потеряны.')) return;
+    try {
+        await removeUser(id);
+        state.users = state.users.filter(u => u.id !== id);
+        if (state.currentUser?.id === id) await logout();
+        else renderUsers();
+    } catch (e) { alert('Ошибка удаления: ' + e.message); }
+}
+
+// ======================================================================
+//  Рендер: Пользователи
+// ======================================================================
+function renderUsers() {
+    const c = document.getElementById('section-users');
+    let html = '';
+
+    if (!state.currentUser) {
+        html += `<div class="card">
+            <h2>Вход</h2>
+            <div class="form-grid">
+                <input type="tel" id="loginPhone" placeholder="Номер телефона">
+                <input type="password" id="loginPassword" placeholder="Пароль" onkeydown="if(event.key==='Enter')doLogin()">
+                <button onclick="doLogin()">Войти</button>
+            </div>
+            <div class="empty-msg">Нет аккаунта? Создайте нового пользователя ниже.</div>
+        </div>`;
+    } else {
+        html += `<div class="card">
+            <h2>Текущий пользователь</h2>
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+                <div>
+                    <div style="font-weight:700;font-size:1.15rem">${esc(state.currentUser.name || 'Без имени')}</div>
+                    <div style="color:#666">${esc(state.currentUser.phone)}</div>
+                </div>
+                <button class="small-btn" onclick="logout()">Выйти</button>
+            </div>
+        </div>`;
     }
 
-    function renderProducts() {
-        const container = document.getElementById('productsList');
-        if (products.length === 0) {
-            container.innerHTML = '<div class="empty-msg">Справочник пуст. Добавьте продукты выше.</div>';
-            return;
-        }
-        let html = `<table><thead><tr><th>Название</th><th>Магазин</th><th>Белок/100г</th><th>Клетчатка/100г</th><th>Ккал/100г</th><th></th></tr></thead><tbody>`;
-        products.forEach(p => {
+    // Список пользователей
+    html += `<div class="card"><h2>Пользователи</h2>`;
+    if (state.users.length === 0) {
+        html += `<div class="empty-msg">Пользователей пока нет.</div>`;
+    } else {
+        html += `<table><thead><tr><th>Имя</th><th>Телефон</th><th style="width:150px"></th></tr></thead><tbody>`;
+        state.users.forEach(u => {
+            const isCurrent = state.currentUser?.id === u.id;
             html += `<tr>
-                <td><strong>${p.name}</strong></td>
-                <td>${p.store || '—'}</td>
-                <td>${p.protein}</td>
-                <td>${p.fiber}</td>
-                <td>${p.kcal}</td>
-                <td><button class="delete-btn" onclick="deleteProduct(${p.id})">✕</button></td>
+                <td><strong>${esc(u.name || 'Без имени')}</strong>${isCurrent ? ' <span class="tile-badge">вы</span>' : ''}</td>
+                <td>${esc(u.phone)}</td>
+                <td><div class="user-row-actions">
+                    ${!isCurrent ? `<button class="small-btn" onclick="promptSwitchUser(${u.id})">Войти</button>` : ''}
+                    ${!isCurrent ? `<button class="delete-btn" onclick="handleDeleteUser(${u.id})">✕</button>` : ''}
+                </div></td>
             </tr>`;
         });
         html += `</tbody></table>`;
-        container.innerHTML = html;
     }
+    html += `</div>`;
 
-    // ---------- МЕНЮ ----------
-    function addItemToMeal(mealKey) {
-        const select = document.getElementById(`select-${mealKey}`);
-        const gramsInput = document.getElementById(`grams-${mealKey}`);
-        const productId = parseInt(select.value);
-        const grams = parseFloat(gramsInput.value);
+    // Добавление пользователя
+    html += `<div class="card">
+        <h2>Добавить пользователя</h2>
+        <div class="form-grid">
+            <input type="tel" id="newPhone" placeholder="Номер телефона">
+            <input type="password" id="newPassword" placeholder="Пароль">
+            <input type="text" id="newName" placeholder="Имя">
+            <button onclick="doRegister()">Создать</button>
+        </div>
+    </div>`;
 
-        if (!productId) { alert('Выберите продукт'); return; }
-        if (!grams || grams <= 0) { alert('Введите корректное количество грамм'); return; }
+    c.innerHTML = html;
+}
 
-        const product = products.find(p => p.id === productId);
-        if (!product) return;
+// ======================================================================
+//  Рендер: О себе
+// ======================================================================
+const profileFields = {
+    name: 'profName', sex: 'profSex', age: 'profAge', height: 'profHeight',
+    weight: 'profWeight', activity: 'profActivity', goal: 'profGoal',
+};
 
-        meals[mealKey].items.push({
-            productId: product.id,
-            grams: grams
+function renderProfile() {
+    const c = document.getElementById('section-about');
+    if (!state.currentUser) {
+        c.innerHTML = `<div class="card"><div class="empty-msg">Войдите, чтобы заполнить профиль.</div></div>`;
+        return;
+    }
+    const p = state.profile;
+    c.innerHTML = `
+        <div class="card">
+            <h2>Мои данные</h2>
+            <div class="form-grid">
+                <label>Имя<input type="text" id="profName" value="${esc(p.name)}" placeholder="Как вас зовут"></label>
+                <label>Пол
+                    <select id="profSex">
+                        <option value="female" ${p.sex==='female'?'selected':''}>Женский</option>
+                        <option value="male" ${p.sex==='male'?'selected':''}>Мужской</option>
+                    </select>
+                </label>
+                <label>Возраст (лет)<input type="number" id="profAge" min="1" step="1" value="${esc(p.age)}"></label>
+                <label>Рост (см)<input type="number" id="profHeight" min="1" step="1" value="${esc(p.height)}"></label>
+                <label>Вес (кг)<input type="number" id="profWeight" min="1" step="0.1" value="${esc(p.weight)}"></label>
+                <label>Активность
+                    <select id="profActivity">
+                        <option value="1.2"   ${p.activity==='1.2'?'selected':''}>Минимальная</option>
+                        <option value="1.375" ${p.activity==='1.375'?'selected':''}>Лёгкая (1–3 тренировки)</option>
+                        <option value="1.55"  ${p.activity==='1.55'?'selected':''}>Средняя (3–5 тренировок)</option>
+                        <option value="1.725" ${p.activity==='1.725'?'selected':''}>Высокая (6–7 тренировок)</option>
+                        <option value="1.9"   ${p.activity==='1.9'?'selected':''}>Очень высокая</option>
+                    </select>
+                </label>
+                <label>Цель
+                    <select id="profGoal">
+                        <option value="lose" ${p.goal==='lose'?'selected':''}>Похудение</option>
+                        <option value="keep" ${p.goal==='keep'?'selected':''}>Поддержание веса</option>
+                        <option value="gain" ${p.goal==='gain'?'selected':''}>Набор массы</option>
+                    </select>
+                </label>
+            </div>
+            <button class="primary-btn" onclick="saveProfile()">Сохранить</button>
+            <span class="saved-msg" id="savedMsg">✓ Сохранено</span>
+        </div>
+        <div class="card">
+            <h2>Моя дневная норма</h2>
+            <div id="normsContainer"></div>
+        </div>`;
+    renderNorms();
+}
+
+async function saveProfile() {
+    Object.entries(profileFields).forEach(([key, id]) => {
+        state.profile[key] = document.getElementById(id).value.trim();
+    });
+    // синхронизируем имя с пользователем
+    if (state.profile.name && state.currentUser) {
+        state.currentUser.name = state.profile.name;
+        const u = state.users.find(x => x.id === state.currentUser.id);
+        if (u) u.name = state.profile.name;
+    }
+    await saveUserData();
+    renderNorms();
+    const msg = document.getElementById('savedMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 1500);
+}
+
+function calculateNorms() {
+    const age = parseFloat(state.profile.age);
+    const height = parseFloat(state.profile.height);
+    const weight = parseFloat(state.profile.weight);
+    if (!age || !height || !weight) return null;
+    const bmr = 10*weight + 6.25*height - 5*age + (state.profile.sex === 'male' ? 5 : -161);
+    const tdee = bmr * parseFloat(state.profile.activity || 1.2);
+    const goalFactor = { lose: 0.85, keep: 1, gain: 1.15 }[state.profile.goal] || 1;
+    const proteinPerKg = { lose: 1.8, keep: 1.4, gain: 1.8 }[state.profile.goal] || 1.4;
+    const kcal = tdee * goalFactor;
+    return { kcal, protein: weight * proteinPerKg, fiber: kcal / 1000 * 14 };
+}
+
+function renderNorms() {
+    const c = document.getElementById('normsContainer');
+    if (!c) return;
+    const n = calculateNorms();
+    if (!n) { c.innerHTML = '<div class="empty-msg">Укажите возраст, рост и вес, чтобы рассчитать норму.</div>'; return; }
+    c.innerHTML = `<div class="norms">
+        <div class="norm"><div class="label">Ккал</div><div class="value">${n.kcal.toFixed(0)}</div></div>
+        <div class="norm"><div class="label">Белок (г)</div><div class="value">${n.protein.toFixed(0)}</div></div>
+        <div class="norm"><div class="label">Клетчатка (г)</div><div class="value">${n.fiber.toFixed(0)}</div></div>
+    </div>`;
+}
+
+// ======================================================================
+//  Рендер: Продукты (с группировкой по магазинам)
+// ======================================================================
+async function addProduct() {
+    const get = (id) => document.getElementById(id).value.trim();
+    const name = get('prodName');
+    if (!name) { alert('Введите название продукта'); return; }
+    state.products.push({
+        id: newId(),
+        name,
+        store: get('prodStore'),
+        protein: parseFloat(get('prodProtein')) || 0,
+        fiber: parseFloat(get('prodFiber')) || 0,
+        kcal: parseFloat(get('prodKcal')) || 0,
+        qty: parseFloat(get('prodQty')) || 0,
+        price: parseFloat(get('prodPrice')) || 0,
+    });
+    await saveUserData();
+    renderProducts();
+}
+
+async function deleteProduct(id) {
+    if (!confirm('Удалить продукт?')) return;
+    state.products = state.products.filter(p => p.id !== id);
+    Object.values(state.days).forEach(day => day.meals.forEach(m => {
+        m.items = m.items.filter(it => it.productId !== id);
+    }));
+    await saveUserData();
+    renderProducts();
+    renderMenu();
+}
+
+function startProductEdit(id) { editingProductId = id; renderProducts(); }
+function cancelProductEdit() { editingProductId = null; renderProducts(); }
+async function saveProductEdit(id) {
+    const p = state.products.find(x => x.id === id);
+    if (!p) return;
+    const v = (f) => document.getElementById(`ep-${f}-${id}`).value;
+    p.name = v('name').trim();
+    p.store = v('store').trim();
+    p.protein = parseFloat(v('protein')) || 0;
+    p.fiber = parseFloat(v('fiber')) || 0;
+    p.kcal = parseFloat(v('kcal')) || 0;
+    p.qty = parseFloat(v('qty')) || 0;
+    p.price = parseFloat(v('price')) || 0;
+    editingProductId = null;
+    await saveUserData();
+    renderProducts();
+    renderMenu();
+}
+
+function renderProducts() {
+    const c = document.getElementById('section-products');
+    if (!state.currentUser) {
+        c.innerHTML = `<div class="card"><div class="empty-msg">Войдите, чтобы видеть продукты.</div></div>`;
+        return;
+    }
+    let html = `<div class="card">
+        <h2>Добавить продукт</h2>
+        <div class="form-grid">
+            <input type="text" id="prodName" placeholder="Название">
+            <input type="text" id="prodStore" placeholder="Магазин">
+            <input type="number" id="prodProtein" placeholder="Белок/100г" step="0.1">
+            <input type="number" id="prodFiber" placeholder="Клетчатка/100г" step="0.1">
+            <input type="number" id="prodKcal" placeholder="Ккал/100г" step="1">
+            <input type="number" id="prodQty" placeholder="Кол-во к покупке" step="0.01" min="0">
+            <input type="number" id="prodPrice" placeholder="Цена за ед." step="0.01" min="0">
+            <button onclick="addProduct()">Добавить</button>
+        </div>
+    </div>`;
+
+    html += `<div class="card"><h2>Список продуктов</h2>`;
+    if (state.products.length === 0) {
+        html += `<div class="empty-msg">Список пуст. Добавьте продукты выше.</div>`;
+    } else {
+        // Группировка по магазинам (в алфавитном порядке)
+        const groups = {};
+        state.products.forEach(p => {
+            const key = (p.store || '').trim() || '— Без магазина —';
+            (groups[key] ||= []).push(p);
         });
+        const stores = Object.keys(groups).sort((a, b) => a.localeCompare(b, 'ru'));
 
-        saveData();
-        renderAll();
-        gramsInput.value = '';
-        select.value = '';
-    }
+        let grandTotal = 0;
+        stores.forEach(store => {
+            const items = groups[store];
+            const storeTotal = items.reduce((s, p) => s + (p.qty || 0) * (p.price || 0), 0);
+            grandTotal += storeTotal;
 
-    function removeItem(mealKey, index) {
-        meals[mealKey].items.splice(index, 1);
-        saveData();
-        renderAll();
-    }
+            html += `<div class="store-group">
+                <div class="store-header">
+                    <span>🏪 ${esc(store)}</span>
+                    <span>${storeTotal.toFixed(2)} ₽</span>
+                </div>
+                <div class="store-body"><table>
+                    <thead><tr>
+                        <th>Название</th><th>Магазин</th>
+                        <th>Б/100г</th><th>Кл/100г</th><th>Ккал/100г</th>
+                        <th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th>
+                    </tr></thead><tbody>`;
 
-    function calculateMealTotals(mealKey) {
-        let totalGrams = 0, totalProtein = 0, totalFiber = 0, totalKcal = 0;
-        meals[mealKey].items.forEach(item => {
-            const p = products.find(prod => prod.id === item.productId);
-            if (!p) return;
-            const factor = item.grams / 100;
-            totalGrams += item.grams;
-            totalProtein += p.protein * factor;
-            totalFiber += p.fiber * factor;
-            totalKcal += p.kcal * factor;
-        });
-        return { totalGrams, totalProtein, totalFiber, totalKcal };
-    }
-
-    function renderMeals() {
-        const container = document.getElementById('mealsContainer');
-        let html = '';
-
-        Object.keys(meals).forEach(key => {
-            const meal = meals[key];
-            const totals = calculateMealTotals(key);
-
-            html += `<div class="meal-section">`;
-            html += `<div class="meal-header">
-                <span>${meal.name} (${meal.time})</span>
-                <span class="meal-total">
-                    Итого: ${totals.totalGrams.toFixed(0)} г | 
-                    Б: ${totals.totalProtein.toFixed(1)} г | 
-                    Кл: ${totals.totalFiber.toFixed(1)} г | 
-                    ${totals.totalKcal.toFixed(0)} ккал
-                </span>
-            </div>`;
-
-            // Таблица продуктов в приеме пищи
-            if (meal.items.length === 0) {
-                html += `<div class="empty-msg" style="padding-left:10px;">Нет продуктов</div>`;
-            } else {
-                html += `<table><thead><tr><th>Продукт</th><th>Грамм</th><th>Белок</th><th>Клетчатка</th><th>Ккал</th><th></th></tr></thead><tbody>`;
-                meal.items.forEach((item, idx) => {
-                    const p = products.find(prod => prod.id === item.productId);
-                    if (!p) return;
-                    const factor = item.grams / 100;
+            items.forEach(p => {
+                const subtotal = (p.qty || 0) * (p.price || 0);
+                if (editingProductId === p.id) {
                     html += `<tr>
-                        <td>${p.name}</td>
-                        <td>${item.grams} г</td>
-                        <td>${(p.protein * factor).toFixed(1)} г</td>
-                        <td>${(p.fiber * factor).toFixed(1)} г</td>
-                        <td>${(p.kcal * factor).toFixed(0)} ккал</td>
-                        <td><button class="delete-btn" onclick="removeItem('${key}', ${idx})">✕</button></td>
+                        <td><input id="ep-name-${p.id}" value="${esc(p.name)}" style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td><input id="ep-store-${p.id}" value="${esc(p.store)}" style="width:100px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td><input id="ep-protein-${p.id}" type="number" step="0.1" value="${p.protein}" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td><input id="ep-fiber-${p.id}" type="number" step="0.1" value="${p.fiber}" style="width:60px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td><input id="ep-kcal-${p.id}" type="number" step="1" value="${p.kcal}" style="width:65px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td><input id="ep-qty-${p.id}" type="number" step="0.01" value="${p.qty}" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td><input id="ep-price-${p.id}" type="number" step="0.01" value="${p.price}" style="width:80px;padding:4px 6px;border:1px solid var(--border);border-radius:4px"></td>
+                        <td>${subtotal.toFixed(2)} ₽</td>
+                        <td style="white-space:nowrap">
+                            <button class="small-btn primary" onclick="saveProductEdit(${p.id})">✓</button>
+                            <button class="small-btn" onclick="cancelProductEdit()">✕</button>
+                        </td>
                     </tr>`;
-                });
-                html += `</tbody></table>`;
-            }
-
-            // Форма добавления продукта в прием пищи
-            html += `<div class="add-item-row">
-                <select id="select-${key}">
-                    <option value="">-- Выберите продукт --</option>
-                    ${products.map(p => `<option value="${p.id}">${p.name} (${p.kcal} ккал/100г)</option>`).join('')}
-                </select>
-                <input type="number" id="grams-${key}" placeholder="Грамм" style="width:90px;" min="1">
-                <button onclick="addItemToMeal('${key}')">+ Добавить</button>
-            </div>`;
-
-            html += `</div>`;
+                } else {
+                    html += `<tr>
+                        <td><strong>${esc(p.name)}</strong></td>
+                        <td>${esc(p.store) || '—'}</td>
+                        <td>${p.protein}</td>
+                        <td>${p.fiber}</td>
+                        <td>${p.kcal}</td>
+                        <td>${p.qty || 0}</td>
+                        <td>${(p.price || 0).toFixed(2)} ₽</td>
+                        <td><strong>${subtotal.toFixed(2)} ₽</strong></td>
+                        <td style="white-space:nowrap">
+                            <button class="small-btn" onclick="startProductEdit(${p.id})" title="Редактировать">✏️</button>
+                            <button class="delete-btn" onclick="deleteProduct(${p.id})" title="Удалить">✕</button>
+                        </td>
+                    </tr>`;
+                }
+            });
+            html += `</tbody></table></div></div>`;
         });
 
-        container.innerHTML = html;
+        html += `<div class="grand-total">
+            <span>💰 Итого по всем магазинам</span>
+            <span>${grandTotal.toFixed(2)} ₽</span>
+        </div>`;
     }
+    html += `</div>`;
+    c.innerHTML = html;
+}
 
-    // ---------- ИТОГИ ЗА ДЕНЬ ----------
-    function updateDaySummary() {
-        let totalGrams = 0, totalProtein = 0, totalFiber = 0, totalKcal = 0;
-        Object.keys(meals).forEach(key => {
-            const totals = calculateMealTotals(key);
-            totalGrams += totals.totalGrams;
-            totalProtein += totals.totalProtein;
-            totalFiber += totals.totalFiber;
-            totalKcal += totals.totalKcal;
-        });
+// ======================================================================
+//  Меню: данные
+// ======================================================================
+function getDay(date) {
+    if (!state.days[date]) state.days[date] = { meals: defaultMeals() };
+    return state.days[date];
+}
+function defaultMeals() {
+    return [
+        ['Завтрак','08:00'], ['Перекус','11:00'], ['Обед','14:00'],
+        ['Полдник','17:00'], ['Ужин','19:00'],
+    ].map(([name, time]) => ({ id: newId(), name, time, dish: '', recipe: '', items: [] }));
+}
+function findMeal(id) { return getDay(menuDay).meals.find(m => m.id === id); }
+function sortedMeals(day) { return [...day.meals].sort((a, b) => (a.time||'').localeCompare(b.time||'')); }
+function isPlanned(m) { return m.dish || m.recipe || m.items.length; }
 
-        document.getElementById('totalGrams').textContent = totalGrams.toFixed(0);
-        document.getElementById('totalProtein').textContent = totalProtein.toFixed(1);
-        document.getElementById('totalFiber').textContent = totalFiber.toFixed(1);
-        document.getElementById('totalKcal').textContent = totalKcal.toFixed(0);
+function calculateMealTotals(meal) {
+    let g = 0, pr = 0, fi = 0, kc = 0;
+    meal.items.forEach(it => {
+        const p = state.products.find(x => x.id === it.productId);
+        if (!p) return;
+        const f = it.grams / 100;
+        g += it.grams; pr += p.protein*f; fi += p.fiber*f; kc += p.kcal*f;
+    });
+    return { totalGrams: g, totalProtein: pr, totalFiber: fi, totalKcal: kc };
+}
+
+function calculateDayTotals(date) {
+    const t = { totalGrams: 0, totalProtein: 0, totalFiber: 0, totalKcal: 0 };
+    (state.days[date]?.meals || []).forEach(m => {
+        const mt = calculateMealTotals(m);
+        Object.keys(t).forEach(k => t[k] += mt[k]);
+    });
+    return t;
+}
+
+// ======================================================================
+//  Меню: действия
+// ======================================================================
+async function addItemToMeal(mealId) {
+    const sel = document.getElementById(`select-${mealId}`);
+    const gramsInput = document.getElementById(`grams-${mealId}`);
+    const pid = sel.value;
+    const grams = parseFloat(gramsInput.value);
+    if (!pid) { alert('Выберите продукт'); return; }
+    if (!grams || grams <= 0) { alert('Введите корректное количество грамм'); return; }
+    findMeal(mealId).items.push({ productId: pid, grams });
+    await saveUserData();
+    renderMenu();
+}
+
+async function removeItem(mealId, idx) {
+    findMeal(mealId).items.splice(idx, 1);
+    await saveUserData();
+    renderMenu();
+}
+
+async function updateMeal(mealId, field, value, rerender) {
+    findMeal(mealId)[field] = value;
+    await saveUserData();
+    if (rerender) renderMenu();
+}
+
+function editRecipe(id) {
+    editingRecipes.add(id);
+    renderMenu();
+    document.getElementById(`recipe-${id}`)?.focus();
+}
+async function saveRecipe(id) {
+    findMeal(id).recipe = document.getElementById(`recipe-${id}`).value.trim();
+    editingRecipes.delete(id);
+    await saveUserData();
+    renderMenu();
+}
+function cancelRecipe(id) { editingRecipes.delete(id); renderMenu(); }
+
+function goToWeek(v) { if (v) location.hash = `menu/${mondayOf(v)}`; }
+
+// ======================================================================
+//  Меню: рендер
+// ======================================================================
+function renderMenu() {
+    const c = document.getElementById('section-menu');
+    if (!state.currentUser) {
+        c.innerHTML = `<div class="card"><div class="empty-msg">Войдите, чтобы видеть меню.</div></div>`;
+        return;
     }
+    if (menuDay)      c.innerHTML = `<div class="card">${renderDayView(menuDay)}</div>`;
+    else if (menuWeek) c.innerHTML = `<div class="card">${renderWeekView(menuWeek)}</div>`;
+    else               c.innerHTML = `<div class="card">${renderWeeksList()}</div>`;
+}
 
-    // ---------- ОБЩАЯ ОТРИСОВКА ----------
-    function renderAll() {
-        renderProducts();
-        renderMeals();
-        updateDaySummary();
+function renderWeeksList() {
+    const currentWeek = mondayOf(toISO(new Date()));
+    const weeks = new Set([currentWeek, addDays(currentWeek,7), addDays(currentWeek,14), addDays(currentWeek,21)]);
+    Object.keys(state.days).forEach(d => { if (state.days[d].meals.some(isPlanned)) weeks.add(mondayOf(d)); });
+
+    let html = `<h2>Меню по неделям</h2>
+        <div class="week-toolbar">
+            <span>Перейти к неделе с датой:</span>
+            <input type="date" onchange="goToWeek(this.value)">
+        </div>
+        <div class="tile-grid">`;
+    [...weeks].sort().forEach(monday => {
+        let planned = 0, kcal = 0;
+        for (let i = 0; i < 7; i++) {
+            const d = addDays(monday, i);
+            if (state.days[d]?.meals.some(isPlanned)) planned++;
+            kcal += calculateDayTotals(d).totalKcal;
+        }
+        html += `<a class="tile ${monday === currentWeek ? 'current' : ''}" href="#menu/${monday}">
+            <div class="tile-title">${formatWeek(monday)}${monday === currentWeek ? '<span class="tile-badge">сейчас</span>' : ''}</div>
+            <div class="tile-sub">Запланировано дней: ${planned} из 7</div>
+            ${planned ? `<div class="tile-sub">В среднем ${(kcal/planned).toFixed(0)} ккал в день</div>` : ''}
+        </a>`;
+    });
+    return html + `</div>`;
+}
+
+function renderWeekView(monday) {
+    const today = toISO(new Date());
+    let html = `<div class="breadcrumbs"><a href="#menu">Меню</a> › Неделя ${formatWeek(monday)}</div>
+        <div class="week-toolbar">
+            <a class="small-btn" href="#menu/${addDays(monday,-7)}" style="text-decoration:none">← Предыдущая</a>
+            <a class="small-btn" href="#menu/${addDays(monday,7)}" style="text-decoration:none">Следующая →</a>
+        </div>
+        <h2>Неделя ${formatWeek(monday)}</h2>
+        <div class="tile-grid">`;
+    for (let i = 0; i < 7; i++) {
+        const d = addDays(monday, i);
+        const day = state.days[d];
+        const planned = day ? sortedMeals(day).filter(isPlanned) : [];
+        const kcal = calculateDayTotals(d).totalKcal;
+        html += `<a class="tile ${d === today ? 'current' : ''}" href="#menu/${monday}/${d}">
+            <div class="tile-title">${WEEKDAYS[i]}${d === today ? '<span class="tile-badge">сегодня</span>' : ''}</div>
+            <div class="tile-sub">${formatDate(d)}${kcal ? ` · ${kcal.toFixed(0)} ккал` : ''}</div>
+            ${planned.length
+                ? `<ul class="tile-meals">${planned.map(m => `<li><span class="time">${esc(m.time)}</span>${esc(m.dish || m.name)}</li>`).join('')}</ul>`
+                : `<div class="tile-sub" style="margin-top:8px;font-style:italic">Ничего не запланировано</div>`}
+        </a>`;
     }
+    return html + `</div>`;
+}
 
-    // Запуск
+function renderDayView(date) {
+    const monday = mondayOf(date);
+    const day = getDay(date);
+    let html = `<div class="breadcrumbs">
+            <a href="#menu">Меню</a> › <a href="#menu/${monday}">Неделя ${formatWeek(monday)}</a> › ${weekdayName(date)}, ${formatDate(date)}
+        </div>
+        <div class="week-toolbar">
+            <a class="small-btn" href="#menu/${mondayOf(addDays(date,-1))}/${addDays(date,-1)}" style="text-decoration:none">← Предыдущий день</a>
+            <a class="small-btn" href="#menu/${mondayOf(addDays(date,1))}/${addDays(date,1)}" style="text-decoration:none">Следующий день →</a>
+        </div>
+        <h2>${weekdayName(date)}, ${formatDate(date)}</h2>`;
+
+    sortedMeals(day).forEach(meal => {
+        const t = calculateMealTotals(meal);
+        const id = meal.id;
+
+        html += `<div class="meal-card">
+            <div class="meal-header">
+                <span>${esc(meal.name)}
+                    <input type="time" value="${esc(meal.time)}" onchange="updateMeal('${id}','time',this.value,true)">
+                </span>
+                <span class="meal-total">
+                    ${t.totalGrams.toFixed(0)} г ·
+                    Б: ${t.totalProtein.toFixed(1)} г ·
+                    Кл: ${t.totalFiber.toFixed(1)} г ·
+                    ${t.totalKcal.toFixed(0)} ккал
+                </span>
+            </div>
+            <div class="meal-fields">
+                <label>Название блюда
+                    <input type="text" value="${esc(meal.dish)}" placeholder="Например: Омлет с овощами"
+                        onchange="updateMeal('${id}','dish',this.value.trim())">
+                </label>
+                <div>
+                    <label>Рецепт / план действий</label>`;
+
+        if (editingRecipes.has(id)) {
+            html += `<div style="margin-top:4px">
+                    <textarea id="recipe-${id}" placeholder="1. Нарезать овощи&#10;2. Взбить яйца&#10;3. Жарить 5 минут">${esc(meal.recipe)}</textarea>
+                </div>
+                <div class="recipe-actions">
+                    <button class="small-btn primary" onclick="saveRecipe('${id}')">Сохранить</button>
+                    <button class="small-btn" onclick="cancelRecipe('${id}')">Отмена</button>
+                </div>`;
+        } else if (meal.recipe) {
+            html += `<div class="recipe-text" style="margin-top:4px">${esc(meal.recipe)}</div>
+                <div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">✏️ Редактировать</button></div>`;
+        } else {
+            html += `<div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">+ Добавить рецепт</button></div>`;
+        }
+        html += `</div></div>`;
+
+        if (meal.items.length === 0) {
+            html += `<div class="empty-msg">Нет продуктов</div>`;
+        } else {
+            html += `<table><thead><tr>
+                <th>Продукт</th><th>Грамм</th><th>Белок</th><th>Клетчатка</th><th>Ккал</th><th></th>
+            </tr></thead><tbody>`;
+            meal.items.forEach((item, idx) => {
+                const p = state.products.find(x => x.id === item.productId);
+                if (!p) return;
+                const f = item.grams / 100;
+                html += `<tr>
+                    <td>${esc(p.name)}</td>
+                    <td>${item.grams} г</td>
+                    <td>${(p.protein*f).toFixed(1)} г</td>
+                    <td>${(p.fiber*f).toFixed(1)} г</td>
+                    <td>${(p.kcal*f).toFixed(0)} ккал</td>
+                    <td><button class="delete-btn" onclick="removeItem('${id}',${idx})">✕</button></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+
+        html += `<div class="add-item-row">
+            <select id="select-${id}">
+                <option value="">-- Выберите продукт --</option>
+                ${state.products.map(p => `<option value="${p.id}">${esc(p.name)} (${p.kcal} ккал/100г)</option>`).join('')}
+            </select>
+            <input type="number" id="grams-${id}" placeholder="Грамм" style="width:90px" min="1">
+            <button onclick="addItemToMeal('${id}')">+ Добавить</button>
+        </div></div>`;
+    });
+
+    const t = calculateDayTotals(date);
+    const n = calculateNorms();
+    const goal = v => n ? `<div class="goal">из ${v.toFixed(0)}</div>` : '';
+    html += `<div class="day-summary">
+        <div class="summary-item"><div class="label">Итого грамм</div><div class="value">${t.totalGrams.toFixed(0)}</div></div>
+        <div class="summary-item"><div class="label">Белок (г)</div><div class="value">${t.totalProtein.toFixed(1)}</div>${n ? goal(n.protein) : ''}</div>
+        <div class="summary-item"><div class="label">Клетчатка (г)</div><div class="value">${t.totalFiber.toFixed(1)}</div>${n ? goal(n.fiber) : ''}</div>
+        <div class="summary-item"><div class="label">Ккал</div><div class="value">${t.totalKcal.toFixed(0)}</div>${n ? goal(n.kcal) : ''}</div>
+    </div>`;
+    return html;
+}
+
+// ======================================================================
+//  Общий рендер и навигация
+// ======================================================================
+function renderAll() {
+    renderUsers();
+    renderProfile();
+    renderProducts();
+    renderMenu();
+}
+
+function showSection() {
+    const tabs = ['users', 'about', 'products', 'menu'];
+    const [section, week, day] = location.hash.slice(1).split('/');
+    let current = tabs.includes(section) ? section : 'users';
+    if (current !== 'users' && !state.currentUser) current = 'users';
+    const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
+
+    menuDay  = current === 'menu' && isDate(day) ? day : null;
+    menuWeek = current === 'menu' && isDate(week) ? mondayOf(menuDay || week) : null;
+    editingRecipes.clear();
     renderAll();
+    window.scrollTo(0, 0);
+
+    tabs.forEach(t => {
+        document.getElementById(`section-${t}`).classList.toggle('active', t === current);
+        document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t === current);
+    });
+}
+
+window.addEventListener('hashchange', showSection);
+
+// ======================================================================
+//  Инициализация
+// ======================================================================
+async function init() {
+    state.users = await fetchUsers();
+    const savedId = parseInt(localStorage.getItem('currentUserId'));
+    if (savedId) {
+        const u = state.users.find(x => x.id === savedId);
+        if (u) {
+            state.currentUser = u;
+            await loadUserData();
+        } else {
+            localStorage.removeItem('currentUserId');
+        }
+    }
+    if (!location.hash) location.hash = '#users';
+    showSection();
+}
+
+init();
 </script>
 </body>
 </html>

@@ -251,6 +251,17 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <section class="section" id="section-shopping">
       <div class="card">
         <h2>🛍️ Список покупок</h2>
+        
+        <!-- Форма добавления в список покупок -->
+        <div class="add-item-row" style="margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
+          <select id="shopSelectProduct" onchange="updateShopUnitHint()" style="flex:1; max-width:300px;">
+            <option value="">-- Выберите продукт --</option>
+          </select>
+          <input type="number" id="shopQty" placeholder="Кол-во" style="width:100px;" min="0.01" step="0.01">
+          <span id="shopUnit" style="font-size:0.9rem; color:#555; font-weight:600;"></span>
+          <button class="primary-btn" onclick="addToShoppingList()">+ В список</button>
+        </div>
+
         <div id="shoppingContainer"></div>
       </div>
     </section>
@@ -838,12 +849,72 @@ function renderProducts() {
 }
 
 /* ============ SHOPPING LIST RENDER ============ */
+window.updateShopUnitHint = () => {
+  const select = document.getElementById('shopSelectProduct');
+  const unit = document.getElementById('shopUnit');
+  const qtyInput = document.getElementById('shopQty');
+  if (!select || !unit || !qtyInput) return;
+  
+  const p = products.find(x => String(x.id) === String(select.value));
+  if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
+  
+  if (p.unitType === 'pc') {
+    unit.textContent = 'шт';
+    qtyInput.placeholder = 'Штук';
+  } else {
+    unit.textContent = 'грамм';
+    qtyInput.placeholder = 'Грамм';
+  }
+};
+
+window.addToShoppingList = () => {
+  const select = document.getElementById('shopSelectProduct');
+  const qtyInput = document.getElementById('shopQty');
+  const productId = select.value;
+  const qty = parseFloat(qtyInput.value);
+
+  if (!productId) { alert('Выберите продукт'); return; }
+  if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
+
+  const product = products.find(p => String(p.id) === String(productId));
+  if (!product) return;
+
+  product.qty = qty;
+  persist();
+  renderShoppingList();
+  renderProducts(); // Обновить данные в разделе продукты
+  
+  select.value = '';
+  qtyInput.value = '';
+  updateShopUnitHint();
+};
+
+window.checkoutProduct = (id) => {
+  const p = products.find(x => String(x.id) === String(id));
+  if (p) {
+    p.qty = 0;
+    persist();
+    renderShoppingList();
+    renderProducts();
+  }
+};
+
 function renderShoppingList() {
   const c = document.getElementById('shoppingContainer');
+  const select = document.getElementById('shopSelectProduct');
+  
+  // Заполняем выпадающий список продуктами
+  if (select) {
+     const currentVal = select.value;
+     select.innerHTML = '<option value="">-- Выберите продукт --</option>' + 
+        products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+     select.value = currentVal;
+  }
+
   const toBuy = products.filter(p => (parseFloat(p.qty) || 0) > 0);
 
   if (toBuy.length === 0) {
-    c.innerHTML = '<div class="empty-msg">Список покупок пуст. Добавьте продукты с количеством в разделе «Продукты».</div>';
+    c.innerHTML = '<div class="empty-msg">Список покупок пуст. Добавьте продукты выше.</div>';
     return;
   }
 
@@ -867,7 +938,7 @@ function renderShoppingList() {
     items.forEach(p => {
       const qtyDisplay = formatQty(p);
       const imgHtml = p.imageUrl 
-        ? `<img src="${p.imageUrl}" class="shopping-img" onclick="viewImage('${p.imageUrl}')" title="Посмотреть фото">`
+        ? `<img src="${p.imageUrl}" class="shopping-img" onclick="event.stopPropagation(); viewImage('${p.imageUrl}')" title="Посмотреть фото">`
         : `<div class="shopping-img-placeholder">📦</div>`;
 
       html += `<li>
@@ -876,8 +947,8 @@ function renderShoppingList() {
           <strong>${esc(p.name)}</strong>
           <span class="shopping-qty">Купить: ${qtyDisplay}</span>
         </div>
-        <label class="shopping-check">
-          <input type="checkbox">
+        <label class="shopping-check" title="Отметить как купленное">
+          <input type="checkbox" onchange="checkoutProduct('${p.id}')">
         </label>
       </li>`;
     });
@@ -1029,12 +1100,10 @@ function renderDailyMenu() {
   sortedMeals(day).forEach(meal => {
     const dishName = meal.dish ? esc(meal.dish) : '<span style="color:#aaa;font-weight:400;font-style:italic">Блюдо не выбрано</span>';
     
-    // Вставляем фото блюда, если оно есть, и останавливаем клик от открытия модалки рецепта
     const imgHtml = meal.imageUrl 
       ? `<img src="${meal.imageUrl}" class="dm-image" onclick="event.stopPropagation(); viewImage('${meal.imageUrl}')" title="Посмотреть фото блюда">` 
       : '';
 
-    // Индивидуальные расчеты (убрали красный цвет)
     let profileStatsHtml = '';
     profiles.forEach(p => {
         const pt = calculateMealTotals(meal, p.id);
@@ -1282,6 +1351,8 @@ function showSection() {
   
   if (current === 'menu') {
     renderMenu();
+  } else if (current === 'shopping') {
+    renderShoppingList();
   }
   window.scrollTo(0,0);
   

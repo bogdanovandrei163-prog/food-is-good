@@ -188,6 +188,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
       </div>
     </section>
 
+    <!-- ============ РАЗДЕЛ ПРОДУКТЫ ============ -->
     <section class="section" id="section-products">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px">
@@ -197,6 +198,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         <div id="productsList"></div>
       </div>
     </section>
+    
     <section class="section" id="section-menu">
       <div class="card" id="menuContainer"></div>
     </section>
@@ -449,10 +451,11 @@ function renderAboutSection() {
     `;
     container.appendChild(card1);
 
-    // Карточка с нормами
+    // Карточка с нормами (ЗАГОЛОВОК ИЗМЕНЕН)
     const card2 = document.createElement('div');
     card2.className = 'card';
-    card2.innerHTML = `<h2>Моя дневная норма</h2><div id="norms_${index}"></div>`;
+    const normTitle = p.name ? `Дневная норма: ${esc(p.name)}` : 'Моя дневная норма';
+    card2.innerHTML = `<h2>${normTitle}</h2><div id="norms_${index}"></div>`;
     container.appendChild(card2);
 
     // Рассчитываем и вставляем нормы
@@ -577,10 +580,12 @@ function renderProducts() {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
     const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
     grandTotal += storeTotal;
+    
+    // ИЗМЕНЕНИЕ: Явно добавляем "Итого:" в шапку магазина
     html += `<div class="store-group">
       <div class="store-header">
         <span>🏪 ${esc(store)}</span>
-        <span class="store-total">${storeTotal.toFixed(2)} ₽</span>
+        <span class="store-total">Итого: ${storeTotal.toFixed(2)} ₽</span>
       </div>
       <div class="store-body"><table>
         <thead><tr>

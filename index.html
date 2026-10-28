@@ -70,7 +70,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .norm .label{font-size:.8rem;color:#555;text-transform:uppercase;letter-spacing:1px}
 .norm .value{font-size:1.6rem;font-weight:700}
 
-/* --- ИЗМЕНЕННЫЕ СТИЛИ ДЛЯ ПРОДУКТОВ --- */
+/* --- СТИЛИ ДЛЯ ПРОДУКТОВ --- */
 .store-group{margin-bottom:18px}
 .store-header{display:flex;justify-content:space-between;align-items:center;background:#eaf2f8;padding:10px 14px;border-radius:10px 10px 0 0;font-weight:700;border:1px solid var(--border);border-bottom:none}
 .store-body{border:1px solid var(--border);border-radius:0;overflow-x:auto;border-bottom:none;}
@@ -154,7 +154,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <button class="close-btn" onclick="toggleSidebar()">✕</button>
   </div>
   <div class="sidebar-nav">
-    <!-- ИЗМЕНЕНИЕ 2: Переименован первый пункт и изменены иконки для наглядности -->
     <a class="tab" href="#new" data-tab="new">🍽️ Меню</a>
     <a class="tab" href="#about" data-tab="about">👤 О себе</a>
     <a class="tab" href="#products" data-tab="products">🛒 Продукты</a>
@@ -176,7 +175,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
       </div>
     </header>
 
-    <!-- Меню (бывший Новый раздел, теперь стартовый экран) -->
+    <!-- Меню -->
     <section class="section" id="section-new">
       <div class="card">
         <h2>Меню</h2>
@@ -215,6 +214,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <h3 id="productModalTitle">Новый продукт</h3>
     <form id="productForm" onsubmit="handleProductSave(event)">
       <input type="hidden" id="editProductId">
+      <input type="hidden" id="editProductImageUrl">
       <div class="form-grid">
         <label>Название *<input type="text" id="editName" required></label>
         <label>Магазин<input type="text" id="editStore"></label>
@@ -236,12 +236,22 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         <label id="gramPerPieceLabel" class="hidden">Граммовка 1 шт (г)
           <input type="number" id="editGramPerPiece" step="0.1" min="0" value="0">
         </label>
+        <label>Фото продукта (необязательно)
+          <input type="file" id="editImageFile" accept="image/*" style="padding:8px;">
+        </label>
       </div>
       <div class="modal-actions">
         <button type="button" class="small-btn" onclick="closeProductModal()">Отмена</button>
         <button type="submit" class="primary-btn">Сохранить</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- ============ IMAGE VIEW MODAL ============ -->
+<div id="imageModal" class="modal hidden" onclick="closeImageModal()">
+  <div class="modal-content" style="max-width:90vw; max-height:90vh; background:transparent; box-shadow:none; padding:0; display:flex; justify-content:center; align-items:center;">
+    <img id="fullImage" src="" style="max-width:100%; max-height:90vh; border-radius:10px; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
   </div>
 </div>
 
@@ -277,14 +287,48 @@ function weekdayName(iso) { return WEEKDAYS[(fromISO(iso).getDay()+6)%7]; }
 function formatDate(iso) { const d = fromISO(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; }
 function formatWeek(monday) { return `${formatDate(monday)} — ${formatDate(addDays(monday,6))}`; }
 
+/* ============ СЖАТИЕ ИЗОБРАЖЕНИЙ ============ */
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxSize = 600; // Максимальный размер стороны в пикселях
+
+        if (width > height && width > maxSize) {
+          height *= maxSize / width;
+          width = maxSize;
+        } else if (height > maxSize) {
+          width *= maxSize / height;
+          height = maxSize;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Конвертируем в Base64 формат JPEG с качеством 70%
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = () => reject(new Error('Ошибка чтения изображения'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Ошибка файла'));
+    reader.readAsDataURL(file);
+  });
+}
+
 /* ============ FIRESTORE DATA ============ */
 async function loadUserData(uid) {
   const docRef = doc(db, 'userData', uid);
   const snap = await getDoc(docRef);
   if (snap.exists()) {
     const d = snap.data();
-    
-    // Миграция со старого формата
     if (d.profiles && Array.isArray(d.profiles)) {
       profiles = d.profiles;
     } else if (d.profile) {
@@ -292,7 +336,6 @@ async function loadUserData(uid) {
     } else {
       profiles = [defaultProfile()];
     }
-    
     products = Array.isArray(d.products) ? d.products : [];
     days = (d.days && typeof d.days === 'object') ? d.days : {};
   } else {
@@ -372,12 +415,11 @@ window.toggleSidebar = () => {
   document.getElementById('sidebarOverlay').classList.toggle('open');
 };
 
-/* ============ PROFILES LOGIC (ABOUT SECTION) ============ */
+/* ============ PROFILES LOGIC ============ */
 window.addNewProfile = () => {
   profiles.push(defaultProfile());
   persist();
   renderAboutSection();
-  // Прокрутка к новой форме
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 };
 
@@ -421,7 +463,6 @@ function renderAboutSection() {
   container.innerHTML = '';
   
   profiles.forEach((p, index) => {
-    // Карточка с данными
     const card1 = document.createElement('div');
     card1.className = 'card';
     card1.innerHTML = `
@@ -455,14 +496,12 @@ function renderAboutSection() {
     `;
     container.appendChild(card1);
 
-    // Карточка с нормами
     const card2 = document.createElement('div');
     card2.className = 'card';
     const normTitle = p.name ? `Дневная норма: ${esc(p.name)}` : 'Моя дневная норма';
     card2.innerHTML = `<h2>${normTitle}</h2><div id="norms_${index}"></div>`;
     container.appendChild(card2);
 
-    // Рассчитываем и вставляем нормы
     const n = calculateNorms(p);
     const c = document.getElementById(`norms_${index}`);
     if (!n) {
@@ -482,11 +521,14 @@ window.openProductModal = (id) => {
   const modal = document.getElementById('productModal');
   document.getElementById('productForm').reset();
   document.getElementById('editProductId').value = '';
+  document.getElementById('editProductImageUrl').value = '';
+  
   if (id) {
     const p = products.find(x => String(x.id) === String(id));
     if (!p) return;
     document.getElementById('productModalTitle').textContent = 'Редактировать продукт';
     document.getElementById('editProductId').value = p.id;
+    document.getElementById('editProductImageUrl').value = p.imageUrl || '';
     document.getElementById('editName').value = p.name;
     document.getElementById('editStore').value = p.store || '';
     document.getElementById('editProtein').value = p.protein || 0;
@@ -513,33 +555,60 @@ window.updateUnitLabels = () => {
   document.getElementById('gramPerPieceLabel').classList.toggle('hidden', unit !== 'pc');
 };
 
-window.handleProductSave = (event) => {
+window.handleProductSave = async (event) => {
   event.preventDefault();
+  
+  const btn = event.target.querySelector('button[type="submit"]');
+  const oldText = btn.textContent;
+  btn.textContent = 'Сохранение...';
+  btn.disabled = true;
+
   const id = document.getElementById('editProductId').value;
   const name = document.getElementById('editName').value.trim();
-  if (!name) { alert('Введите название'); return; }
-  const unitType = document.getElementById('editUnitType').value;
-  const data = {
-    name,
-    store: document.getElementById('editStore').value.trim(),
-    protein: parseFloat(document.getElementById('editProtein').value) || 0,
-    fiber: parseFloat(document.getElementById('editFiber').value) || 0,
-    kcal: parseFloat(document.getElementById('editKcal').value) || 0,
-    unitType,
-    qty: parseFloat(document.getElementById('editQty').value) || 0,
-    price: parseFloat(document.getElementById('editPrice').value) || 0,
-    gramPerPiece: unitType === 'pc' ? (parseFloat(document.getElementById('editGramPerPiece').value) || 0) : 0
-  };
-  if (id) {
-    const idx = products.findIndex(p => String(p.id) === String(id));
-    if (idx !== -1) products[idx] = { ...products[idx], ...data };
-  } else {
-    products.push({ id: newId(), ...data });
+  if (!name) { alert('Введите название'); btn.textContent = oldText; btn.disabled = false; return; }
+  
+  let imageUrl = document.getElementById('editProductImageUrl').value; 
+  const fileInput = document.getElementById('editImageFile');
+  const file = fileInput.files[0];
+
+  try {
+    // Если выбран файл - сжимаем и кодируем в Base64
+    if (file) {
+      imageUrl = await compressImage(file);
+    }
+
+    const unitType = document.getElementById('editUnitType').value;
+    const data = {
+      name,
+      store: document.getElementById('editStore').value.trim(),
+      protein: parseFloat(document.getElementById('editProtein').value) || 0,
+      fiber: parseFloat(document.getElementById('editFiber').value) || 0,
+      kcal: parseFloat(document.getElementById('editKcal').value) || 0,
+      unitType,
+      qty: parseFloat(document.getElementById('editQty').value) || 0,
+      price: parseFloat(document.getElementById('editPrice').value) || 0,
+      gramPerPiece: unitType === 'pc' ? (parseFloat(document.getElementById('editGramPerPiece').value) || 0) : 0,
+      imageUrl: imageUrl
+    };
+
+    if (id) {
+      const idx = products.findIndex(p => String(p.id) === String(id));
+      if (idx !== -1) products[idx] = { ...products[idx], ...data };
+    } else {
+      products.push({ id: newId(), ...data });
+    }
+    
+    await persist(); // Сохраняем в Firestore
+    closeProductModal();
+    renderProducts();
+    renderMenu();
+  } catch (e) {
+    console.error(e);
+    alert('Ошибка при сохранении: ' + e.message);
+  } finally {
+    btn.textContent = oldText;
+    btn.disabled = false;
   }
-  persist();
-  closeProductModal();
-  renderProducts();
-  renderMenu();
 };
 
 window.deleteProduct = (id) => {
@@ -566,6 +635,16 @@ function formatPrice(p) {
   return p.unitType === 'pc' ? `${pr} ₽/шт` : `${pr} ₽/100г`;
 }
 
+// Функции для просмотра картинки
+window.viewImage = (url) => {
+  document.getElementById('fullImage').src = url;
+  document.getElementById('imageModal').classList.remove('hidden');
+};
+window.closeImageModal = () => {
+  document.getElementById('imageModal').classList.add('hidden');
+  setTimeout(() => { document.getElementById('fullImage').src = ''; }, 300); 
+};
+
 function renderProducts() {
   const c = document.getElementById('productsList');
   if (products.length === 0) {
@@ -585,7 +664,6 @@ function renderProducts() {
     const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
     grandTotal += storeTotal;
     
-    // ИЗМЕНЕНИЕ 1: Итого магазина вынесено вниз под таблицу
     html += `<div class="store-group">
       <div class="store-header">
         <span>🏪 ${esc(store)}</span>
@@ -597,6 +675,7 @@ function renderProducts() {
         </tr></thead><tbody>`;
     items.forEach(p => {
       const subtotal = productSubtotal(p);
+      // Кнопка просмотра фото (если картинка есть)
       html += `<tr>
         <td>
           <strong>${esc(p.name)}</strong>
@@ -610,6 +689,7 @@ function renderProducts() {
         <td><strong>${subtotal.toFixed(2)} ₽</strong></td>
         <td style="white-space:nowrap">
           <button class="small-btn" onclick="openProductModal('${p.id}')" title="Редактировать">✏️</button>
+          ${p.imageUrl ? `<button class="small-btn" onclick="viewImage('${p.imageUrl}')" title="Посмотреть фото" style="background:#eaf2f8;border-color:#c8d6e5;margin:0 4px;">📷</button>` : ''}
           <button class="delete-btn" onclick="deleteProduct('${p.id}')" title="Удалить">✕</button>
         </td>
       </tr>`;
@@ -884,7 +964,6 @@ function showSection() {
   const tabs = ['new', 'about', 'products', 'menu'];
   const [section, week, day] = location.hash.slice(1).split('/');
   
-  // ИЗМЕНЕНИЕ 3: Если хэш пустой или неизвестен, открываем 'new' (Меню)
   const current = tabs.includes(section) ? section : 'new';
   
   const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v||'');
@@ -920,7 +999,6 @@ onAuthStateChanged(auth, async (user) => {
       console.error('Ошибка загрузки данных:', e);
     }
 
-    // ИЗМЕНЕНИЕ 3: После входа перенаправляем на #new (Меню)
     if (!location.hash || location.hash === '#') location.hash = '#new';
     showSection();
     renderAll();

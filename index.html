@@ -78,6 +78,18 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .store-bottom-total{display:flex;justify-content:space-between;align-items:center;background:#f0f4f8;padding:12px 16px;border-radius:0 0 10px 10px;font-weight:700;font-size:1rem;border:1px solid var(--border);}
 .grand-total{display:flex;justify-content:space-between;align-items:center;background:#2c3e50;color:#fff;padding:16px 20px;border-radius:12px;font-size:1.15rem;font-weight:700;margin-top:20px}
 
+/* --- СТИЛИ ДЛЯ СПИСКА ПОКУПОК --- */
+.shopping-list { list-style: none; padding: 0; margin: 0; }
+.shopping-list li { display: flex; align-items: center; gap: 15px; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #fff; transition: background 0.2s; }
+.shopping-list li:last-child { border-bottom: none; }
+.shopping-list li:hover { background: #f8fafc; }
+.shopping-img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); }
+.shopping-img-placeholder { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f0f4f8; border-radius: 8px; font-size: 1.2rem; color: #888; border: 1px solid var(--border); }
+.shopping-details { flex: 1; display: flex; flex-direction: column; }
+.shopping-qty { font-size: 0.9rem; color: var(--accent); font-weight: 600; margin-top: 2px;}
+.shopping-check { display: flex; align-items: center; cursor: pointer; padding: 5px; }
+.shopping-check input { width: 22px; height: 22px; cursor: pointer; accent-color: var(--accent); }
+
 .breadcrumbs{margin-bottom:15px;font-size:.95rem;color:#555}
 .breadcrumbs a{color:var(--accent);text-decoration:none}
 .breadcrumbs a:hover{text-decoration:underline}
@@ -157,6 +169,8 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <a class="tab" href="#new" data-tab="new">🍽️ Меню</a>
     <a class="tab" href="#about" data-tab="about">👤 О себе</a>
     <a class="tab" href="#products" data-tab="products">🛒 Продукты</a>
+    <!-- НОВЫЙ ПУНКТ МЕНЮ -->
+    <a class="tab" href="#shopping" data-tab="shopping">🛍️ Список покупок</a>
     <a class="tab" href="#menu" data-tab="menu">📝 Составить меню</a>
   </div>
 </nav>
@@ -175,7 +189,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
       </div>
     </header>
 
-    <!-- Меню -->
+    <!-- Меню (пустой раздел) -->
     <section class="section" id="section-new">
       <div class="card">
         <h2>Меню</h2>
@@ -201,7 +215,16 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         <div id="productsList"></div>
       </div>
     </section>
+
+    <!-- ============ РАЗДЕЛ СПИСОК ПОКУПОК ============ -->
+    <section class="section" id="section-shopping">
+      <div class="card">
+        <h2>🛍️ Список покупок</h2>
+        <div id="shoppingContainer"></div>
+      </div>
+    </section>
     
+    <!-- ============ РАЗДЕЛ СОСТАВИТЬ МЕНЮ ============ -->
     <section class="section" id="section-menu">
       <div class="card" id="menuContainer"></div>
     </section>
@@ -572,7 +595,6 @@ window.handleProductSave = async (event) => {
   const file = fileInput.files[0];
 
   try {
-    // Если выбран файл - сжимаем и кодируем в Base64
     if (file) {
       imageUrl = await compressImage(file);
     }
@@ -598,9 +620,10 @@ window.handleProductSave = async (event) => {
       products.push({ id: newId(), ...data });
     }
     
-    await persist(); // Сохраняем в Firestore
+    await persist(); 
     closeProductModal();
     renderProducts();
+    renderShoppingList(); // Обновляем и список покупок
     renderMenu();
   } catch (e) {
     console.error(e);
@@ -612,13 +635,14 @@ window.handleProductSave = async (event) => {
 };
 
 window.deleteProduct = (id) => {
-  if (!confirm('Удалить продукт из справочника? Он также исчезнет из меню.')) return;
+  if (!confirm('Удалить продукт из справочника? Он также исчезнет из меню и списка покупок.')) return;
   products = products.filter(p => String(p.id) !== String(id));
   Object.values(days).forEach(day => (day.meals||[]).forEach(m => {
     m.items = (m.items||[]).filter(it => String(it.productId) !== String(id));
   }));
   persist();
   renderProducts();
+  renderShoppingList(); // Обновляем и список покупок
   renderMenu();
 };
 
@@ -675,7 +699,6 @@ function renderProducts() {
         </tr></thead><tbody>`;
     items.forEach(p => {
       const subtotal = productSubtotal(p);
-      // Кнопка просмотра фото (если картинка есть)
       html += `<tr>
         <td>
           <strong>${esc(p.name)}</strong>
@@ -704,6 +727,59 @@ function renderProducts() {
   html += `<div class="grand-total"><span>💰 Итого по всем магазинам</span><span>${grandTotal.toFixed(2)} ₽</span></div>`;
   c.innerHTML = html;
 }
+
+/* ============ SHOPPING LIST RENDER ============ */
+function renderShoppingList() {
+  const c = document.getElementById('shoppingContainer');
+  // Берем только те продукты, у которых количество к покупке > 0
+  const toBuy = products.filter(p => (parseFloat(p.qty) || 0) > 0);
+
+  if (toBuy.length === 0) {
+    c.innerHTML = '<div class="empty-msg">Список покупок пуст. Добавьте продукты с количеством в разделе «Продукты».</div>';
+    return;
+  }
+
+  const groups = {};
+  toBuy.forEach(p => {
+    const key = (p.store || '').trim() || '— Без магазина —';
+    (groups[key] ||= []).push(p);
+  });
+  const stores = Object.keys(groups).sort((a,b) => a.localeCompare(b,'ru'));
+  let html = '';
+
+  stores.forEach(store => {
+    const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
+    html += `<div class="store-group">
+      <div class="store-header">
+        <span>🏪 ${esc(store)}</span>
+      </div>
+      <div class="store-body">
+        <ul class="shopping-list">`;
+
+    items.forEach(p => {
+      const qtyDisplay = formatQty(p);
+      const imgHtml = p.imageUrl 
+        ? `<img src="${p.imageUrl}" class="shopping-img" onclick="viewImage('${p.imageUrl}')" title="Посмотреть фото">`
+        : `<div class="shopping-img-placeholder">📦</div>`;
+
+      html += `<li>
+        ${imgHtml}
+        <div class="shopping-details">
+          <strong>${esc(p.name)}</strong>
+          <span class="shopping-qty">Купить: ${qtyDisplay}</span>
+        </div>
+        <label class="shopping-check">
+          <input type="checkbox">
+        </label>
+      </li>`;
+    });
+
+    html += `</ul></div></div>`;
+  });
+
+  c.innerHTML = html;
+}
+
 
 /* ============ MENU: DATA ============ */
 function defaultMeals() {
@@ -958,10 +1034,15 @@ function renderDayView(date) {
 }
 
 /* ============ NAV ============ */
-function renderAll() { renderAboutSection(); renderProducts(); renderMenu(); }
+function renderAll() { 
+  renderAboutSection(); 
+  renderProducts(); 
+  renderShoppingList();
+  renderMenu(); 
+}
 
 function showSection() {
-  const tabs = ['new', 'about', 'products', 'menu'];
+  const tabs = ['new', 'about', 'products', 'shopping', 'menu'];
   const [section, week, day] = location.hash.slice(1).split('/');
   
   const current = tabs.includes(section) ? section : 'new';

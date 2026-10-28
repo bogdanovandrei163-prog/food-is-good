@@ -115,6 +115,14 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:20px;z-index:250}
 .modal-content{background:var(--card-bg);border-radius:14px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
+.profile-list{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+.profile-pill{display:flex;align-items:center;background:#f8fafc;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.profile-pill.active{border-color:var(--accent);background:#eaf2f8}
+.profile-pill button{border:none;background:none;padding:8px 12px;font-weight:600;color:var(--text)}
+.profile-pill button.name-btn{flex:1;text-align:left}
+.profile-pill.active button.name-btn{color:var(--accent)}
+.profile-pill button.action-btn{border-left:1px solid var(--border);color:#888}
+.profile-pill button.action-btn:hover{color:var(--danger)}
 @media(max-width:600px){body{padding:12px}.app-header h1{font-size:1.2rem}.user-info{font-size:.8rem;padding:6px 10px}}
 </style>
 </head>
@@ -182,36 +190,21 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
       </div>
     </section>
 
+    <!-- ============ РАЗДЕЛ О СЕБЕ ============ -->
     <section class="section" id="section-about">
       <div class="card">
-        <h2>Мои данные</h2>
-        <div class="form-grid">
-          <label>Имя<input type="text" id="profName" placeholder="Как вас зовут"></label>
-          <label>Пол<select id="profSex"><option value="female">Женский</option><option value="male">Мужской</option></select></label>
-          <label>Возраст (лет)<input type="number" id="profAge" min="1" step="1"></label>
-          <label>Рост (см)<input type="number" id="profHeight" min="1" step="1"></label>
-          <label>Вес (кг)<input type="number" id="profWeight" min="1" step="0.1"></label>
-          <label>Активность<select id="profActivity">
-            <option value="1.2">Минимальная</option>
-            <option value="1.375">Лёгкая (1–3 тренировки)</option>
-            <option value="1.55">Средняя (3–5 тренировок)</option>
-            <option value="1.725">Высокая (6–7 тренировок)</option>
-            <option value="1.9">Очень высокая</option>
-          </select></label>
-          <label>Цель<select id="profGoal">
-            <option value="lose">Похудение</option>
-            <option value="keep">Поддержание веса</option>
-            <option value="gain">Набор массы</option>
-          </select></label>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px">
+          <h2 id="aboutHeader" style="margin:0;border:none;padding:0">Мои данные</h2>
+          <button class="primary-btn" onclick="openProfileModal()">+ Добавить</button>
         </div>
-        <button class="primary-btn" onclick="saveProfile()">Сохранить</button>
-        <span class="saved-msg" id="savedMsg">✓ Сохранено</span>
+        <div id="profilesList" class="profile-list"></div>
       </div>
       <div class="card">
-        <h2>Моя дневная норма</h2>
+        <h2>Дневная норма</h2>
         <div id="normsContainer"></div>
       </div>
     </section>
+
     <section class="section" id="section-products">
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px">
@@ -224,6 +217,39 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <section class="section" id="section-menu">
       <div class="card" id="menuContainer"></div>
     </section>
+  </div>
+</div>
+
+<!-- ============ PROFILE MODAL ============ -->
+<div id="profileModal" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="profileModalTitle">Новый профиль</h3>
+    <form id="profileForm" onsubmit="handleProfileSave(event)">
+      <input type="hidden" id="editProfileId">
+      <div class="form-grid">
+        <label>Имя *<input type="text" id="profName" required placeholder="Как вас зовут"></label>
+        <label>Пол<select id="profSex"><option value="female">Женский</option><option value="male">Мужской</option></select></label>
+        <label>Возраст (лет)<input type="number" id="profAge" min="1" step="1"></label>
+        <label>Рост (см)<input type="number" id="profHeight" min="1" step="1"></label>
+        <label>Вес (кг)<input type="number" id="profWeight" min="1" step="0.1"></label>
+        <label>Активность<select id="profActivity">
+          <option value="1.2">Минимальная</option>
+          <option value="1.375">Лёгкая (1–3 тренировки)</option>
+          <option value="1.55">Средняя (3–5 тренировок)</option>
+          <option value="1.725">Высокая (6–7 тренировок)</option>
+          <option value="1.9">Очень высокая</option>
+        </select></label>
+        <label>Цель<select id="profGoal">
+          <option value="lose">Похудение</option>
+          <option value="keep">Поддержание веса</option>
+          <option value="gain">Набор массы</option>
+        </select></label>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="small-btn" onclick="closeProfileModal()">Отмена</button>
+        <button type="submit" class="primary-btn">Сохранить</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -276,7 +302,8 @@ const MONTHS = ['января','февраля','марта','апреля','м�
 
 /* ============ STATE ============ */
 let currentUser = null;
-let profile = defaultProfile();
+let profiles = [];
+let activeProfileId = null;
 let products = [];
 let days = {};
 let menuWeek = null;
@@ -286,7 +313,6 @@ const editingRecipes = new Set();
 /* ============ UTILS ============ */
 function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function defaultProfile() { return { name:'', sex:'female', age:'', height:'', weight:'', activity:'1.375', goal:'keep' }; }
 function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fromISO(iso) { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
 function addDays(iso, n) { const d = fromISO(iso); d.setDate(d.getDate()+n); return toISO(d); }
@@ -301,11 +327,21 @@ async function loadUserData(uid) {
   const snap = await getDoc(docRef);
   if (snap.exists()) {
     const d = snap.data();
-    profile = d.profile || defaultProfile();
+    
+    // Миграция со старого формата (один профиль) на новый (массив профилей)
+    if (d.profile && !d.profiles) {
+      profiles = [{ id: newId(), ...d.profile }];
+      activeProfileId = profiles[0].id;
+      await setDoc(docRef, { profiles, activeProfileId }, { merge: true });
+    } else {
+      profiles = Array.isArray(d.profiles) ? d.profiles : [];
+      activeProfileId = d.activeProfileId || (profiles[0]?.id || null);
+    }
+
     products = Array.isArray(d.products) ? d.products : [];
     days = (d.days && typeof d.days === 'object') ? d.days : {};
   } else {
-    await setDoc(docRef, { profile: defaultProfile(), products: [], days: {} });
+    await setDoc(docRef, { profiles: [], activeProfileId: null, products: [], days: {} });
   }
 }
 
@@ -313,7 +349,7 @@ async function persist() {
   if (!auth.currentUser) return;
   const docRef = doc(db, 'userData', auth.currentUser.uid);
   try {
-    await setDoc(docRef, { profile, products, days }, { merge: true });
+    await setDoc(docRef, { profiles, activeProfileId, products, days }, { merge: true });
   } catch (e) {
     console.error('Ошибка сохранения:', e);
   }
@@ -337,7 +373,6 @@ window.handleLogin = async () => {
   try {
     await signInWithEmailAndPassword(auth, email, password);
   } catch (e) {
-    console.error('Login error:', e.code);
     if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
       err.textContent = 'Неверный email или пароль';
     } else if (e.code === 'auth/invalid-email') {
@@ -358,7 +393,6 @@ window.handleRegister = async () => {
   try {
     await createUserWithEmailAndPassword(auth, email, password);
   } catch (e) {
-    console.error('Registration error:', e.code);
     if (e.code === 'auth/email-already-in-use') {
       err.textContent = 'Этот email уже зарегистрирован';
     } else if (e.code === 'auth/invalid-email') {
@@ -382,54 +416,137 @@ window.toggleSidebar = () => {
   document.getElementById('sidebarOverlay').classList.toggle('open');
 };
 
-/* ============ PROFILE ============ */
-const profileFields = {
-  name:'profName', sex:'profSex', age:'profAge', height:'profHeight',
-  weight:'profWeight', activity:'profActivity', goal:'profGoal'
+/* ============ PROFILES LOGIC ============ */
+window.openProfileModal = (id = null) => {
+  const modal = document.getElementById('profileModal');
+  document.getElementById('profileForm').reset();
+  document.getElementById('editProfileId').value = '';
+  
+  if (id) {
+    const p = profiles.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById('profileModalTitle').textContent = 'Редактировать профиль';
+    document.getElementById('editProfileId').value = p.id;
+    document.getElementById('profName').value = p.name || '';
+    document.getElementById('profSex').value = p.sex || 'female';
+    document.getElementById('profAge').value = p.age || '';
+    document.getElementById('profHeight').value = p.height || '';
+    document.getElementById('profWeight').value = p.weight || '';
+    document.getElementById('profActivity').value = p.activity || '1.375';
+    document.getElementById('profGoal').value = p.goal || 'keep';
+  } else {
+    document.getElementById('profileModalTitle').textContent = 'Новый профиль';
+  }
+  modal.classList.remove('hidden');
 };
 
-function fillProfileForm() {
-  Object.entries(profileFields).forEach(([k,id]) => {
-    const el = document.getElementById(id);
-    if (el) el.value = profile[k] ?? '';
-  });
+window.closeProfileModal = () => { document.getElementById('profileModal').classList.add('hidden'); };
+
+window.handleProfileSave = (event) => {
+  event.preventDefault();
+  const id = document.getElementById('editProfileId').value;
+  const data = {
+    name: document.getElementById('profName').value.trim(),
+    sex: document.getElementById('profSex').value,
+    age: document.getElementById('profAge').value.trim(),
+    height: document.getElementById('profHeight').value.trim(),
+    weight: document.getElementById('profWeight').value.trim(),
+    activity: document.getElementById('profActivity').value,
+    goal: document.getElementById('profGoal').value
+  };
+
+  if (id) {
+    const idx = profiles.findIndex(p => p.id === id);
+    if (idx !== -1) profiles[idx] = { ...profiles[idx], ...data };
+  } else {
+    const newProfile = { id: newId(), ...data };
+    profiles.push(newProfile);
+    activeProfileId = newProfile.id; // Сразу делаем его активным
+  }
+
+  persist();
+  closeProfileModal();
+  renderProfilesList();
+  renderNorms();
+};
+
+window.selectProfile = (id) => {
+  activeProfileId = id;
+  persist();
+  renderProfilesList();
+  renderNorms();
+};
+
+window.deleteProfile = (id) => {
+  if (!confirm('Удалить этот профиль?')) return;
+  profiles = profiles.filter(p => p.id !== id);
+  if (activeProfileId === id) {
+    activeProfileId = profiles.length > 0 ? profiles[0].id : null;
+  }
+  persist();
+  renderProfilesList();
+  renderNorms();
+};
+
+function renderProfilesList() {
+  const c = document.getElementById('profilesList');
+  if (profiles.length === 0) {
+    c.innerHTML = '<div class="empty-msg" style="width:100%">Нет добавленных профилей. Нажмите «+ Добавить».</div>';
+    document.getElementById('aboutHeader').textContent = 'Мои данные';
+    return;
+  }
+
+  c.innerHTML = profiles.map(p => `
+    <div class="profile-pill ${p.id === activeProfileId ? 'active' : ''}">
+      <button class="name-btn" onclick="selectProfile('${p.id}')">
+        ${esc(p.name || 'Без имени')}
+      </button>
+      <button class="action-btn" onclick="openProfileModal('${p.id}')" title="Редактировать">✏️</button>
+      <button class="action-btn" onclick="deleteProfile('${p.id}')" title="Удалить">✕</button>
+    </div>
+  `).join('');
+
+  const active = profiles.find(p => p.id === activeProfileId);
+  document.getElementById('aboutHeader').textContent = active ? `Мои данные: ${active.name}` : 'Мои данные';
 }
 
-window.saveProfile = () => {
-  Object.entries(profileFields).forEach(([k,id]) => {
-    const el = document.getElementById(id);
-    if (el) profile[k] = el.value.trim();
-  });
-  persist();
-  renderNorms();
-  const msg = document.getElementById('savedMsg');
-  msg.classList.add('show');
-  setTimeout(() => msg.classList.remove('show'), 1500);
-};
-
-function calculateNorms() {
-  const age = parseFloat(profile.age);
-  const height = parseFloat(profile.height);
-  const weight = parseFloat(profile.weight);
+function calculateNorms(p) {
+  if (!p) return null;
+  const age = parseFloat(p.age);
+  const height = parseFloat(p.height);
+  const weight = parseFloat(p.weight);
   if (!age || !height || !weight) return null;
-  const bmr = 10*weight + 6.25*height - 5*age + (profile.sex === 'male' ? 5 : -161);
-  const tdee = bmr * parseFloat(profile.activity || 1.2);
-  const gf = { lose:0.85, keep:1, gain:1.15 }[profile.goal] || 1;
-  const ppk = { lose:1.8, keep:1.4, gain:1.8 }[profile.goal] || 1.4;
+  
+  const bmr = 10*weight + 6.25*height - 5*age + (p.sex === 'male' ? 5 : -161);
+  const tdee = bmr * parseFloat(p.activity || 1.2);
+  const gf = { lose:0.85, keep:1, gain:1.15 }[p.goal] || 1;
+  const ppk = { lose:1.8, keep:1.4, gain:1.8 }[p.goal] || 1.4;
   const kcal = tdee * gf;
   return { kcal, protein: weight * ppk, fiber: kcal/1000 * 14 };
 }
 
 function renderNorms() {
   const c = document.getElementById('normsContainer');
-  const n = calculateNorms();
-  if (!n) { c.innerHTML = '<div class="empty-msg">Укажите возраст, рост и вес, чтобы рассчитать норму.</div>'; return; }
+  const active = profiles.find(p => p.id === activeProfileId);
+  
+  if (!active) {
+    c.innerHTML = '<div class="empty-msg">Выберите или добавьте профиль.</div>';
+    return;
+  }
+  
+  const n = calculateNorms(active);
+  if (!n) {
+    c.innerHTML = '<div class="empty-msg">Укажите возраст, рост и вес в профиле, чтобы рассчитать норму.</div>';
+    return;
+  }
+  
   c.innerHTML = `<div class="norms">
     <div class="norm"><div class="label">Ккал</div><div class="value">${n.kcal.toFixed(0)}</div></div>
     <div class="norm"><div class="label">Белок (г)</div><div class="value">${n.protein.toFixed(0)}</div></div>
     <div class="norm"><div class="label">Клетчатка (г)</div><div class="value">${n.fiber.toFixed(0)}</div></div>
   </div>`;
 }
+
 
 /* ============ PRODUCTS ============ */
 window.openProductModal = (id) => {
@@ -812,7 +929,9 @@ function renderDayView(date) {
   });
 
   const t = calculateDayTotals(date);
-  const n = calculateNorms();
+  const activeProfile = profiles.find(p => p.id === activeProfileId);
+  const n = calculateNorms(activeProfile);
+  
   const goal = v => n ? `<div class="goal">из ${v.toFixed(0)}</div>` : '';
   html += `<div class="day-summary">
     <div class="summary-item"><div class="label">Итого грамм</div><div class="value">${t.totalGrams.toFixed(0)}</div></div>
@@ -824,7 +943,7 @@ function renderDayView(date) {
 }
 
 /* ============ NAV ============ */
-function renderAll() { renderNorms(); renderProducts(); renderMenu(); }
+function renderAll() { renderProfilesList(); renderNorms(); renderProducts(); renderMenu(); }
 
 function showSection() {
   const tabs = ['new', 'about', 'products', 'menu'];
@@ -843,7 +962,6 @@ function showSection() {
     document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t===current);
   });
 
-  // Автоматически закрываем боковое меню при клике на ссылку
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('open');
 }
@@ -864,13 +982,13 @@ onAuthStateChanged(auth, async (user) => {
       console.error('Ошибка загрузки данных:', e);
     }
 
-    fillProfileForm();
     if (!location.hash || location.hash === '#') location.hash = '#menu';
     showSection();
     renderAll();
   } else {
     currentUser = null;
-    profile = defaultProfile();
+    profiles = [];
+    activeProfileId = null;
     products = [];
     days = {};
     menuWeek = null;

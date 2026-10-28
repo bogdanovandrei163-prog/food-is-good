@@ -70,11 +70,12 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .norm .label{font-size:.8rem;color:#555;text-transform:uppercase;letter-spacing:1px}
 .norm .value{font-size:1.6rem;font-weight:700}
 
-/* --- НОВЫЕ СТИЛИ ДЛЯ ДАШБОРДА МЕНЮ (РАЗДЕЛ "МЕНЮ") --- */
+/* --- СТИЛИ ДЛЯ ДАШБОРДА МЕНЮ --- */
 .daily-menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px; }
 .daily-meal-card { background: #fff; border: 2px solid #c8d6e5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
 .daily-meal-card:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,.15); }
 .dm-header { font-weight: 700; font-size: 1.1rem; margin-bottom: 12px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.dm-image { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border); }
 .dm-body { flex: 1; margin-bottom: 15px; }
 .dm-dish { font-weight: 600; font-size: 1.05rem; color: var(--text); margin-bottom: 12px; line-height: 1.3; }
 .dm-nutrition { font-size: 0.9rem; color: #555; display: flex; flex-direction: column; gap: 4px; }
@@ -123,6 +124,12 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .meal-fields label{font-size:.85rem;color:#555;display:flex;flex-direction:column;gap:4px}
 .meal-fields input[type="text"],.meal-fields textarea{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.95rem;font-family:inherit}
 .meal-fields textarea{min-height:110px;resize:vertical}
+
+/* --- НОВЫЕ СТИЛИ ДЛЯ ФОТО БЛЮДА --- */
+.meal-photo-row { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
+.meal-img-preview { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; transition: transform 0.2s; }
+.meal-img-preview:hover { transform: scale(1.05); border-color: var(--accent); }
+
 .recipe-text{white-space:pre-wrap;background:#fafbfc;border:1px solid var(--border);border-radius:6px;padding:10px;font-size:.95rem}
 .recipe-actions{display:flex;gap:8px;margin-top:6px}
 .add-item-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center}
@@ -632,7 +639,7 @@ window.handleProductSave = async (event) => {
     closeProductModal();
     renderProducts();
     renderShoppingList(); 
-    renderMenu(); // Здесь вызывается и renderDailyMenu
+    renderMenu(); 
   } catch (e) {
     console.error(e);
     alert('Ошибка при сохранении: ' + e.message);
@@ -789,7 +796,7 @@ function renderShoppingList() {
 /* ============ MENU: DATA ============ */
 function defaultMeals() {
   return [['Завтрак','08:00'],['Перекус','11:00'],['Обед','14:00'],['Полдник','17:00'],['Ужин','19:00']]
-    .map(([name,time]) => ({ id: newId(), name, time, dish:'', recipe:'', items:[] }));
+    .map(([name,time]) => ({ id: newId(), name, time, dish:'', recipe:'', items:[], imageUrl:'' }));
 }
 function getDay(date) {
   if (!days[date]) days[date] = { meals: defaultMeals() };
@@ -852,6 +859,18 @@ window.updateMeal = (mealId, field, value, rerender) => {
   if (rerender) renderMenu();
 };
 
+window.handleMealImageUpload = async (mealId, file) => {
+  if (!file) return;
+  try {
+    const imageUrl = await compressImage(file);
+    findMeal(mealId).imageUrl = imageUrl;
+    await persist();
+    renderMenu(); // Перерисовывает и "Составить меню", и "Меню на сегодня"
+  } catch (e) {
+    alert('Ошибка при загрузке фото блюда: ' + e.message);
+  }
+};
+
 window.editRecipe = (id) => {
   editingRecipes.add(id); renderMenu();
   const el = document.getElementById(`recipe-${id}`);
@@ -894,8 +913,14 @@ function renderDailyMenu() {
     const t = calculateMealTotals(meal);
     const dishName = meal.dish ? esc(meal.dish) : '<span style="color:#aaa;font-weight:400;font-style:italic">Блюдо не выбрано</span>';
     
+    // Вставляем фото блюда, если оно есть
+    const imgHtml = meal.imageUrl 
+      ? `<img src="${meal.imageUrl}" class="dm-image" onclick="viewImage('${meal.imageUrl}')" title="Посмотреть фото блюда">` 
+      : '';
+
     html += `<div class="daily-meal-card">
       <div class="dm-header">${esc(meal.name)}</div>
+      ${imgHtml}
       <div class="dm-body">
         <div class="dm-dish">${dishName}</div>
         <div class="dm-nutrition">
@@ -918,7 +943,6 @@ function renderMenu() {
   else if (menuWeek) c.innerHTML = renderWeekView(menuWeek);
   else c.innerHTML = renderWeeksList();
   
-  // Обновляем дашборд при любых изменениях в меню
   renderDailyMenu();
 }
 
@@ -1016,7 +1040,17 @@ function renderDayView(date) {
     } else {
       html += `<div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">+ Добавить рецепт</button></div>`;
     }
-    html += `</div></div>`;
+    
+    // Блок с фото блюда
+    html += `</div>
+      <div class="meal-photo-row">
+        ${meal.imageUrl ? `<img src="${meal.imageUrl}" class="meal-img-preview" onclick="viewImage('${meal.imageUrl}')" title="Посмотреть фото">` : ''}
+        <label class="small-btn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+          📷 ${meal.imageUrl ? 'Изменить фото' : 'Добавить фото блюда'}
+          <input type="file" accept="image/*" style="display: none;" onchange="handleMealImageUpload('${id}', this.files[0])">
+        </label>
+      </div>
+    </div>`; // Закрываем meal-fields
 
     if (!meal.items || meal.items.length === 0) {
       html += `<div class="empty-msg">Нет продуктов</div>`;
@@ -1074,7 +1108,7 @@ function renderAll() {
   renderAboutSection(); 
   renderProducts(); 
   renderShoppingList();
-  renderMenu(); // Здесь тоже обновляется renderDailyMenu
+  renderMenu(); 
 }
 
 function showSection() {

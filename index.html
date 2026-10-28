@@ -115,14 +115,14 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         <button class="auth-tab" data-auth="register" onclick="switchAuthTab('register')">Регистрация</button>
       </div>
       <div class="auth-panel" id="authPanel-login">
-        <input type="tel" id="loginPhone" placeholder="Номер телефона" autocomplete="tel">
+        <input type="email" id="loginPhone" placeholder="Email" autocomplete="email">
         <input type="password" id="loginPassword" placeholder="Пароль" autocomplete="current-password" onkeydown="if(event.key==='Enter')handleLogin()">
         <button class="primary-btn" onclick="handleLogin()">Войти</button>
         <div class="auth-error" id="loginError"></div>
       </div>
       <div class="auth-panel hidden" id="authPanel-register">
-        <input type="tel" id="regPhone" placeholder="Номер телефона" autocomplete="tel">
-        <input type="password" id="regPassword" placeholder="Пароль (мин. 4 символа)" autocomplete="new-password" onkeydown="if(event.key==='Enter')handleRegister()">
+        <input type="email" id="regPhone" placeholder="Email" autocomplete="email">
+        <input type="password" id="regPassword" placeholder="Пароль (мин. 6 символов)" autocomplete="new-password" onkeydown="if(event.key==='Enter')handleRegister()">
         <button class="primary-btn" onclick="handleRegister()">Зарегистрироваться</button>
         <div class="auth-error" id="regError"></div>
       </div>
@@ -226,11 +226,14 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
   </div>
 </div>
 
-<script>
+<script type="module">
+import {
+  auth, db,
+  createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  doc, getDoc, setDoc
+} from './firebase-config.js';
+
 /* ============ CONSTANTS ============ */
-const USERS_KEY = 'mp_users';
-const CURRENT_KEY = 'mp_current_user_id';
-const DATA_PREFIX = 'mp_data_';
 const WEEKDAYS = ['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'];
 const MONTHS = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
 
@@ -247,7 +250,6 @@ const editingRecipes = new Set();
 function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function defaultProfile() { return { name:'', sex:'female', age:'', height:'', weight:'', activity:'1.375', goal:'keep' }; }
-
 function toISO(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fromISO(iso) { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
 function addDays(iso, n) { const d = fromISO(iso); d.setDate(d.getDate()+n); return toISO(d); }
@@ -256,124 +258,101 @@ function weekdayName(iso) { return WEEKDAYS[(fromISO(iso).getDay()+6)%7]; }
 function formatDate(iso) { const d = fromISO(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; }
 function formatWeek(monday) { return `${formatDate(monday)} — ${formatDate(addDays(monday,6))}`; }
 
-/* ============ AUTH / STORAGE ============ */
-function getUsers() { try { return JSON.parse(localStorage.getItem(USERS_KEY) || '[]'); } catch { return []; } }
-function saveUsers(u) { localStorage.setItem(USERS_KEY, JSON.stringify(u)); }
-function getCurrentUserId() { return localStorage.getItem(CURRENT_KEY); }
-function setCurrentUserId(id) { id ? localStorage.setItem(CURRENT_KEY, String(id)) : localStorage.removeItem(CURRENT_KEY); }
-function dataKey(uid) { return DATA_PREFIX + uid; }
-
-function loadUserData(uid) {
-  const raw = localStorage.getItem(dataKey(uid));
-  if (!raw) return { profile: defaultProfile(), products: [], days: {} };
-  try {
-    const d = JSON.parse(raw);
-    return {
-      profile: d.profile || defaultProfile(),
-      products: Array.isArray(d.products) ? d.products : [],
-      days: (d.days && typeof d.days === 'object') ? d.days : {}
-    };
-  } catch { return { profile: defaultProfile(), products: [], days: {} }; }
+/* ============ FIRESTORE DATA ============ */
+async function loadUserData(uid) {
+  const docRef = doc(db, 'userData', uid);
+  const snap = await getDoc(docRef);
+  if (snap.exists()) {
+    const d = snap.data();
+    profile = d.profile || defaultProfile();
+    products = Array.isArray(d.products) ? d.products : [];
+    days = (d.days && typeof d.days === 'object') ? d.days : {};
+  } else {
+    await setDoc(docRef, { profile: defaultProfile(), products: [], days: {} });
+  }
 }
-function saveUserData(uid, data) { localStorage.setItem(dataKey(uid), JSON.stringify(data)); }
 
-function persist() {
-  if (!currentUser) return;
-  saveUserData(currentUser.id, { profile, products, days });
+async function persist() {
+  if (!auth.currentUser) return;
+  const docRef = doc(db, 'userData', auth.currentUser.uid);
+  try {
+    await setDoc(docRef, { profile, products, days }, { merge: true });
+  } catch (e) {
+    console.error('Ошибка сохранения:', e);
+  }
 }
 
 /* ============ AUTH UI ============ */
-function switchAuthTab(tab) {
+window.switchAuthTab = (tab) => {
   document.querySelectorAll('.auth-tab').forEach(b => b.classList.toggle('active', b.dataset.auth === tab));
   document.getElementById('authPanel-login').classList.toggle('hidden', tab !== 'login');
   document.getElementById('authPanel-register').classList.toggle('hidden', tab !== 'register');
   document.getElementById('loginError').textContent = '';
   document.getElementById('regError').textContent = '';
-}
+};
 
-function handleLogin() {
-  const phone = document.getElementById('loginPhone').value.trim();
+window.handleLogin = async () => {
+  const email = document.getElementById('loginPhone').value.trim();
   const password = document.getElementById('loginPassword').value;
   const err = document.getElementById('loginError');
   err.textContent = '';
-  if (!phone || !password) { err.textContent = 'Введите телефон и пароль'; return; }
-  const user = getUsers().find(u => u.phone === phone);
-  if (!user) { err.textContent = 'Пользователь с таким телефоном не найден'; return; }
-  if (user.password !== password) { err.textContent = 'Неверный пароль'; return; }
-  loginAs(user);
-}
+  if (!email || !password) { err.textContent = 'Введите email и пароль'; return; }
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    console.error('Login error:', e.code);
+    if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+      err.textContent = 'Неверный email или пароль';
+    } else if (e.code === 'auth/invalid-email') {
+      err.textContent = 'Некорректный email';
+    } else {
+      err.textContent = 'Ошибка входа: ' + e.message;
+    }
+  }
+};
 
-function handleRegister() {
-  const phone = document.getElementById('regPhone').value.trim();
+window.handleRegister = async () => {
+  const email = document.getElementById('regPhone').value.trim();
   const password = document.getElementById('regPassword').value;
   const err = document.getElementById('regError');
   err.textContent = '';
-  if (!phone || !password) { err.textContent = 'Введите телефон и пароль'; return; }
-  if (password.length < 4) { err.textContent = 'Пароль минимум 4 символа'; return; }
-  const users = getUsers();
-  if (users.find(u => u.phone === phone)) { err.textContent = 'Этот телефон уже зарегистрирован'; return; }
-  const user = { id: newId(), phone, password, createdAt: new Date().toISOString() };
-  users.push(user);
-  saveUsers(users);
-  loginAs(user);
-}
+  if (!email || !password) { err.textContent = 'Введите email и пароль'; return; }
+  if (password.length < 6) { err.textContent = 'Пароль должен быть не менее 6 символов'; return; }
+  try {
+    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (e) {
+    console.error('Registration error:', e.code);
+    if (e.code === 'auth/email-already-in-use') {
+      err.textContent = 'Этот email уже зарегистрирован';
+    } else if (e.code === 'auth/invalid-email') {
+      err.textContent = 'Некорректный email';
+    } else if (e.code === 'auth/weak-password') {
+      err.textContent = 'Слишком слабый пароль';
+    } else {
+      err.textContent = 'Ошибка регистрации: ' + e.message;
+    }
+  }
+};
 
-function loginAs(user) {
-  setCurrentUserId(user.id);
-  currentUser = user;
-  const data = loadUserData(user.id);
-  profile = data.profile;
-  products = data.products;
-  days = data.days;
-  menuWeek = null;
-  menuDay = null;
-  editingRecipes.clear();
-  showApp();
-}
-
-function handleLogout() {
+window.handleLogout = async () => {
   if (!confirm('Выйти из аккаунта?')) return;
-  setCurrentUserId(null);
-  currentUser = null;
-  profile = defaultProfile();
-  products = []; days = {};
-  menuWeek = null; menuDay = null;
-  editingRecipes.clear();
-  document.getElementById('loginPhone').value = '';
-  document.getElementById('loginPassword').value = '';
-  document.getElementById('regPhone').value = '';
-  document.getElementById('regPassword').value = '';
-  document.getElementById('loginError').textContent = '';
-  document.getElementById('regError').textContent = '';
-  showAuth();
-}
-
-function showAuth() {
-  document.getElementById('authScreen').classList.remove('hidden');
-  document.getElementById('app').classList.add('hidden');
-}
-function showApp() {
-  document.getElementById('authScreen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  document.getElementById('headerUserName').textContent = currentUser.phone;
-  fillProfileForm();
-  if (!location.hash || location.hash === '#') location.hash = '#menu';
-  showSection();
-  renderAll();
-}
+  try { await signOut(auth); } catch (e) { console.error(e); }
+};
 
 /* ============ PROFILE ============ */
 const profileFields = {
   name:'profName', sex:'profSex', age:'profAge', height:'profHeight',
   weight:'profWeight', activity:'profActivity', goal:'profGoal'
 };
+
 function fillProfileForm() {
   Object.entries(profileFields).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (el) el.value = profile[k] ?? '';
   });
 }
-function saveProfile() {
+
+window.saveProfile = () => {
   Object.entries(profileFields).forEach(([k,id]) => {
     const el = document.getElementById(id);
     if (el) profile[k] = el.value.trim();
@@ -383,7 +362,8 @@ function saveProfile() {
   const msg = document.getElementById('savedMsg');
   msg.classList.add('show');
   setTimeout(() => msg.classList.remove('show'), 1500);
-}
+};
+
 function calculateNorms() {
   const age = parseFloat(profile.age);
   const height = parseFloat(profile.height);
@@ -396,6 +376,7 @@ function calculateNorms() {
   const kcal = tdee * gf;
   return { kcal, protein: weight * ppk, fiber: kcal/1000 * 14 };
 }
+
 function renderNorms() {
   const c = document.getElementById('normsContainer');
   const n = calculateNorms();
@@ -408,7 +389,7 @@ function renderNorms() {
 }
 
 /* ============ PRODUCTS ============ */
-function openProductModal(id) {
+window.openProductModal = (id) => {
   const modal = document.getElementById('productModal');
   document.getElementById('productForm').reset();
   document.getElementById('editProductId').value = '';
@@ -432,15 +413,18 @@ function openProductModal(id) {
   }
   updateUnitLabels();
   modal.classList.remove('hidden');
-}
-function closeProductModal() { document.getElementById('productModal').classList.add('hidden'); }
-function updateUnitLabels() {
+};
+
+window.closeProductModal = () => { document.getElementById('productModal').classList.add('hidden'); };
+
+window.updateUnitLabels = () => {
   const unit = document.getElementById('editUnitType').value;
   document.getElementById('qtyLabelText').textContent = unit === 'pc' ? 'Количество к покупке (шт)' : 'Количество к покупке (г)';
   document.getElementById('priceLabelText').textContent = unit === 'pc' ? 'Цена за 1 шт (₽)' : 'Цена за 100г (₽)';
   document.getElementById('gramPerPieceLabel').classList.toggle('hidden', unit !== 'pc');
-}
-function handleProductSave(event) {
+};
+
+window.handleProductSave = (event) => {
   event.preventDefault();
   const id = document.getElementById('editProductId').value;
   const name = document.getElementById('editName').value.trim();
@@ -467,8 +451,9 @@ function handleProductSave(event) {
   closeProductModal();
   renderProducts();
   renderMenu();
-}
-function deleteProduct(id) {
+};
+
+window.deleteProduct = (id) => {
   if (!confirm('Удалить продукт из справочника? Он также исчезнет из меню.')) return;
   products = products.filter(p => String(p.id) !== String(id));
   Object.values(days).forEach(day => (day.meals||[]).forEach(m => {
@@ -477,7 +462,8 @@ function deleteProduct(id) {
   persist();
   renderProducts();
   renderMenu();
-}
+};
+
 function productSubtotal(p) {
   const q = p.qty || 0, pr = p.price || 0;
   return p.unitType === 'pc' ? q * pr : (q/100) * pr;
@@ -490,6 +476,7 @@ function formatPrice(p) {
   const pr = (p.price || 0).toFixed(2);
   return p.unitType === 'pc' ? `${pr} ₽/шт` : `${pr} ₽/100г`;
 }
+
 function renderProducts() {
   const c = document.getElementById('productsList');
   if (products.length === 0) {
@@ -576,7 +563,7 @@ function calculateDayTotals(date) {
 }
 
 /* ============ MENU: ACTIONS ============ */
-function addItemToMeal(mealId) {
+window.addItemToMeal = (mealId) => {
   const select = document.getElementById(`select-${mealId}`);
   const qtyInput = document.getElementById(`qty-${mealId}`);
   const productId = select.value;
@@ -595,30 +582,36 @@ function addItemToMeal(mealId) {
   findMeal(mealId).items.push({ productId: product.id, grams });
   persist();
   renderMenu();
-}
-function removeItem(mealId, idx) {
+};
+
+window.removeItem = (mealId, idx) => {
   findMeal(mealId).items.splice(idx, 1);
   persist();
   renderMenu();
-}
-function updateMeal(mealId, field, value, rerender) {
+};
+
+window.updateMeal = (mealId, field, value, rerender) => {
   findMeal(mealId)[field] = value;
   persist();
   if (rerender) renderMenu();
-}
-function editRecipe(id) {
+};
+
+window.editRecipe = (id) => {
   editingRecipes.add(id); renderMenu();
   const el = document.getElementById(`recipe-${id}`);
   if (el) el.focus();
-}
-function saveRecipe(id) {
+};
+
+window.saveRecipe = (id) => {
   findMeal(id).recipe = document.getElementById(`recipe-${id}`).value.trim();
   editingRecipes.delete(id); persist(); renderMenu();
-}
-function cancelRecipe(id) { editingRecipes.delete(id); renderMenu(); }
-function goToWeek(v) { if (v) location.hash = `menu/${mondayOf(v)}`; }
+};
 
-function updateMealInputHint(mealId) {
+window.cancelRecipe = (id) => { editingRecipes.delete(id); renderMenu(); };
+
+window.goToWeek = (v) => { if (v) location.hash = `menu/${mondayOf(v)}`; };
+
+window.updateMealInputHint = (mealId) => {
   const select = document.getElementById(`select-${mealId}`);
   const unit = document.getElementById(`unit-${mealId}`);
   const qtyInput = document.getElementById(`qty-${mealId}`);
@@ -632,7 +625,7 @@ function updateMealInputHint(mealId) {
     unit.textContent = 'грамм';
     qtyInput.placeholder = 'Грамм';
   }
-}
+};
 
 /* ============ MENU: RENDER ============ */
 function renderMenu() {
@@ -641,6 +634,7 @@ function renderMenu() {
   else if (menuWeek) c.innerHTML = renderWeekView(menuWeek);
   else c.innerHTML = renderWeeksList();
 }
+
 function renderWeeksList() {
   const currentWeek = mondayOf(toISO(new Date()));
   const weeks = new Set([currentWeek, addDays(currentWeek,7), addDays(currentWeek,14), addDays(currentWeek,21)]);
@@ -664,6 +658,7 @@ function renderWeeksList() {
   });
   return html + `</div>`;
 }
+
 function renderWeekView(monday) {
   const today = toISO(new Date());
   let html = `<div class="breadcrumbs"><a href="#menu">Меню</a> › Неделя ${formatWeek(monday)}</div>
@@ -688,6 +683,7 @@ function renderWeekView(monday) {
   }
   return html + `</div>`;
 }
+
 function renderDayView(date) {
   const monday = mondayOf(date);
   const day = getDay(date);
@@ -784,7 +780,7 @@ function renderDayView(date) {
   return html;
 }
 
-/* ============ NAV / INIT ============ */
+/* ============ NAV ============ */
 function renderAll() { renderNorms(); renderProducts(); renderMenu(); }
 
 function showSection() {
@@ -802,14 +798,46 @@ function showSection() {
     document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t===current);
   });
 }
+window.showSection = showSection;
 window.addEventListener('hashchange', showSection);
 
-(function init() {
-  const id = getCurrentUserId();
-  const user = id ? getUsers().find(u => String(u.id) === String(id)) : null;
-  if (user) loginAs(user);
-  else showAuth();
-})();
+/* ============ INIT / AUTH STATE ============ */
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = { id: user.uid, email: user.email };
+    document.getElementById('headerUserName').textContent = user.email;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+
+    try {
+      await loadUserData(user.uid);
+    } catch (e) {
+      console.error('Ошибка загрузки данных:', e);
+    }
+
+    fillProfileForm();
+    if (!location.hash || location.hash === '#') location.hash = '#menu';
+    showSection();
+    renderAll();
+  } else {
+    currentUser = null;
+    profile = defaultProfile();
+    products = [];
+    days = {};
+    menuWeek = null;
+    menuDay = null;
+    editingRecipes.clear();
+
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('loginPhone').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('regPhone').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('regError').textContent = '';
+  }
+});
 </script>
 </body>
 </html>

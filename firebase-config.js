@@ -14,7 +14,7 @@ import {
   setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Ваш конфиг из консоли Firebase
+// Конфигурация вашего Firebase-проекта (meny-b583e)
 const firebaseConfig = {
   apiKey: "AIzaSyBxatrNfOf_MHxBfPqg0yH94RqeklOhOdg",
   authDomain: "meny-b583e.firebaseapp.com",
@@ -27,8 +27,11 @@ const firebaseConfig = {
 
 // Инициализация Firebase
 const app = initializeApp(firebaseConfig);
+
+// Экспортируем сервисы и функции, которые используются в index.html
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
 export {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,

@@ -1181,4 +1181,548 @@ function renderRecipes() {
     
     html += `<div class="card" style="margin-bottom:15px; display:flex; flex-direction:column;">
       <div style="display:flex; justify-content:space-between; align-items:start; gap:10px;">
-       
+        <div>
+          <h3 style="margin:0; font-size:1.1rem;">${esc(r.name)}</h3>
+          ${r.description ? `<div style="font-size:0.9rem; color:#666; margin-top:5px;">${esc(r.description)}</div>` : ''}
+        </div>
+        <div style="display:flex; gap:5px; flex-shrink:0;">
+          <button class="small-btn" onclick="openRecipeModal('${r.id}')" title="Редактировать">✏️</button>
+          <button class="delete-btn" onclick="deleteRecipe('${r.id}')" title="Удалить">✕</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <strong style="font-size:0.9rem;">Ингредиенты:</strong>
+        <ul style="margin:5px 0 0 20px; font-size:0.85rem; color:#444; padding:0;">
+          ${itemsHtml || '<li style="list-style:none;color:#999;">Нет ингредиентов</li>'}
+        </ul>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+/* ============ ДОБАВЛЕНИЕ РЕЦЕПТА В МЕНЮ ============ */
+window.openAddRecipeToMeal = (mealId) => {
+  pendingMealId = mealId;
+  const modal = document.getElementById('selectRecipeModal');
+  const list = document.getElementById('selectRecipeList');
+  
+  if (recipes.length === 0) {
+    list.innerHTML = '<div class="empty-msg">Нет сохранённых рецептов. Сначала создайте рецепт в разделе «Рецепты».</div>';
+  } else {
+    list.innerHTML = recipes.map(r => 
+      `<div class="card" style="margin-bottom:8px; cursor:pointer; padding:12px; transition: background 0.2s;" onclick="applyRecipeToMeal('${r.id}')" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='#fff'">
+        <strong>${esc(r.name)}</strong>
+        ${r.description ? `<div style="font-size:0.85rem; color:#666; margin-top:3px;">${esc(r.description)}</div>` : ''}
+        ${r.items && r.items.length ? `<div style="font-size:0.8rem; color:#888; margin-top:5px;">Ингредиентов: ${r.items.length}</div>` : ''}
+      </div>`
+    ).join('');
+  }
+  modal.classList.remove('hidden');
+};
+
+window.closeSelectRecipeModal = () => {
+  document.getElementById('selectRecipeModal').classList.add('hidden');
+  pendingMealId = null;
+};
+
+window.applyRecipeToMeal = (recipeId) => {
+  if (!pendingMealId) return;
+  const recipe = recipes.find(r => String(r.id) === String(recipeId));
+  if (!recipe) return;
+  const meal = findMeal(pendingMealId);
+  if (!meal) return;
+  
+  profiles.forEach(p => {
+    if (!meal.userItems[p.id]) meal.userItems[p.id] = [];
+    recipe.items.forEach(it => {
+      const prod = products.find(x => String(x.id) === String(it.productId));
+      if (prod) {
+        meal.userItems[p.id].push({ productId: it.productId, grams: it.grams });
+      }
+    });
+  });
+  
+  persist();
+  renderMenu();
+  closeSelectRecipeModal();
+};
+
+/* ============ MENU: DATA ============ */
+function defaultMeals() {
+  return [['Завтрак','08:00'],['Перекус','11:00'],['Обед','14:00'],['Полдник','17:00'],['Ужин','19:00']]
+    .map(([name,time]) => ({ id: newId(), name, time, dish:'', recipe:'', userItems:{}, imageUrl:'' }));
+}
+function getDay(date) {
+  if (!days[date]) days[date] = { meals: defaultMeals() };
+  return days[date];
+}
+function findMeal(id) { return getDay(menuDay).meals.find(m => m.id === id); }
+function sortedMeals(day) { return [...day.meals].sort((a,b) => (a.time||'').localeCompare(b.time||'')); }
+function isPlanned(m) { 
+  const hasItems = m.userItems && Object.values(m.userItems).some(arr => arr.length > 0);
+  return m.dish || m.recipe || hasItems; 
+}
+
+function calculateMealTotals(meal, profileId = null) {
+  let g=0,pr=0,fi=0,kc=0;
+  if (!meal.userItems) return { totalGrams:g, totalProtein:pr, totalFiber:fi, totalKcal:kc };
+  
+  let itemsToCalc = [];
+  if (profileId) {
+      itemsToCalc = meal.userItems[profileId] || [];
+  } else {
+      profiles.forEach(p => {
+          if (meal.userItems[p.id]) {
+              itemsToCalc = itemsToCalc.concat(meal.userItems[p.id]);
+          }
+      });
+  }
+
+  itemsToCalc.forEach(it => {
+    const p = products.find(x => String(x.id) === String(it.productId));
+    if (!p) return;
+    const f = it.grams / 100;
+    g += it.grams; pr += p.protein*f; fi += p.fiber*f; kc += p.kcal*f;
+  });
+  return { totalGrams:g, totalProtein:pr, totalFiber:fi, totalKcal:kc };
+}
+
+function calculateDayTotals(date, profileId = null) {
+  const t = { totalGrams:0, totalProtein:0, totalFiber:0, totalKcal:0 };
+  (days[date]?.meals || []).forEach(m => {
+    const mt = calculateMealTotals(m, profileId);
+    Object.keys(t).forEach(k => t[k] += mt[k]);
+  });
+  return t;
+}
+
+/* ============ MENU: ACTIONS ============ */
+window.addItemToMeal = (mealId, profileId) => {
+  const select = document.getElementById(`select-${mealId}-${profileId}`);
+  const qtyInput = document.getElementById(`qty-${mealId}-${profileId}`);
+  const productId = select.value;
+  const qty = parseFloat(qtyInput.value);
+  if (!productId) { alert('Выберите продукт'); return; }
+  if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
+  const product = products.find(p => String(p.id) === String(productId));
+  if (!product) return;
+  let grams;
+  if (product.unitType === 'pc') {
+    if (!product.gramPerPiece) { alert('У продукта не указана граммовка 1 шт. Отредактируйте продукт.'); return; }
+    grams = qty * product.gramPerPiece;
+  } else {
+    grams = qty;
+  }
+  const meal = findMeal(mealId);
+  if (!meal.userItems[profileId]) meal.userItems[profileId] = [];
+  meal.userItems[profileId].push({ productId: product.id, grams });
+  persist();
+  renderMenu();
+};
+
+window.removeItem = (mealId, profileId, idx) => {
+  const meal = findMeal(mealId);
+  if (meal.userItems && meal.userItems[profileId]) {
+    meal.userItems[profileId].splice(idx, 1);
+    persist();
+    renderMenu();
+  }
+};
+
+window.updateMeal = (mealId, field, value, rerender) => {
+  findMeal(mealId)[field] = value;
+  persist();
+  if (rerender) renderMenu();
+};
+
+window.handleMealImageUpload = async (mealId, file) => {
+  if (!file) return;
+  try {
+    const imageUrl = await compressImage(file);
+    findMeal(mealId).imageUrl = imageUrl;
+    await persist();
+    renderMenu(); 
+  } catch (e) {
+    alert('Ошибка при загрузке фото блюда: ' + e.message);
+  }
+};
+
+window.editRecipe = (id) => {
+  editingRecipes.add(id); renderMenu();
+  const el = document.getElementById(`recipe-${id}`);
+  if (el) el.focus();
+};
+
+window.saveRecipe = (id) => {
+  findMeal(id).recipe = document.getElementById(`recipe-${id}`).value.trim();
+  editingRecipes.delete(id); persist(); renderMenu();
+};
+
+window.cancelRecipe = (id) => { editingRecipes.delete(id); renderMenu(); };
+
+window.goToWeek = (v) => { if (v) location.hash = `menu/${mondayOf(v)}`; };
+
+window.updateMealInputHint = (mealId, profileId) => {
+  const select = document.getElementById(`select-${mealId}-${profileId}`);
+  const unit = document.getElementById(`unit-${mealId}-${profileId}`);
+  const qtyInput = document.getElementById(`qty-${mealId}-${profileId}`);
+  if (!select || !unit || !qtyInput) return;
+  const p = products.find(x => String(x.id) === String(select.value));
+  if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
+  if (p.unitType === 'pc') {
+    unit.textContent = p.gramPerPiece ? `шт (= ${p.gramPerPiece} г/шт)` : 'шт';
+    qtyInput.placeholder = 'Штук';
+  } else {
+    unit.textContent = 'грамм';
+    qtyInput.placeholder = 'Грамм';
+  }
+};
+
+/* ============ RENDER: DAILY MENU DASHBOARD ============ */
+window.changeDailyDate = (offset) => {
+  dailyViewDate = addDays(dailyViewDate, offset);
+  renderDailyMenu();
+};
+
+function renderDailyMenu() {
+  const c = document.getElementById('dailyMenuContainer');
+  const title = document.getElementById('dailyMenuTitle');
+  if (!c || !title) return;
+
+  const today = toISO(new Date());
+  if (dailyViewDate === today) {
+    title.textContent = 'Меню на сегодня';
+  } else {
+    title.textContent = `Меню на ${formatDate(dailyViewDate)} (${weekdayName(dailyViewDate)})`;
+  }
+
+  const day = getDay(dailyViewDate);
+  
+  let html = '';
+  sortedMeals(day).forEach(meal => {
+    const dishName = meal.dish ? esc(meal.dish) : '<span style="color:#aaa;font-weight:400;font-style:italic">Блюдо не выбрано</span>';
+    
+    const imgHtml = meal.imageUrl 
+      ? `<img src="${meal.imageUrl}" class="dm-image" onclick="event.stopPropagation(); viewImage('${meal.imageUrl}')" title="Посмотреть фото блюда">` 
+      : '';
+
+    let profileStatsHtml = '';
+    profiles.forEach(p => {
+        const pt = calculateMealTotals(meal, p.id);
+        if (pt.totalGrams > 0) {
+            profileStatsHtml += `
+               <div style="font-size:0.85rem; margin-top:8px; border-top:1px dashed #eee; padding-top:8px;">
+                 <div style="font-weight:600; color:#2c3e50; margin-bottom:2px;">Для ${esc(p.name || 'Без имени')}:</div>
+                 <div style="display:flex; justify-content:space-between; color:#555;">
+                    <span>Вес: ${pt.totalGrams.toFixed(0)}г</span>
+                    <span>Б: ${pt.totalProtein.toFixed(1)}г</span>
+                    <span>Кл: ${pt.totalFiber.toFixed(1)}г</span>
+                    <span>Ккал: ${pt.totalKcal.toFixed(0)}</span>
+                 </div>
+               </div>
+            `;
+        }
+    });
+
+    html += `<div class="daily-meal-card" onclick="openMealDetails('${dailyViewDate}', '${meal.id}')">
+      <div class="dm-header">${esc(meal.name)}</div>
+      ${imgHtml}
+      <div class="dm-body">
+        <div class="dm-dish">${dishName}</div>
+        ${profileStatsHtml || '<div style="font-size:0.85rem; color:#aaa; font-style:italic;">Нет данных по продуктам</div>'}
+      </div>
+      <div class="dm-footer">Время: ${esc(meal.time)}</div>
+    </div>`;
+  });
+  
+  c.innerHTML = html;
+}
+
+/* ============ MENU: RENDER ============ */
+function renderMenu() {
+  const c = document.getElementById('menuContainer');
+  if (menuDay) c.innerHTML = renderDayView(menuDay);
+  else if (menuWeek) c.innerHTML = renderWeekView(menuWeek);
+  else c.innerHTML = renderWeeksList();
+  
+  renderDailyMenu();
+}
+
+function renderWeeksList() {
+  const currentWeek = mondayOf(toISO(new Date()));
+  const weeks = new Set([currentWeek, addDays(currentWeek,7), addDays(currentWeek,14), addDays(currentWeek,21)]);
+  Object.keys(days).forEach(d => { if ((days[d].meals||[]).some(isPlanned)) weeks.add(mondayOf(d)); });
+  let html = `<h2>Меню по неделям</h2>
+    <div class="week-toolbar"><span>Перейти к неделе с датой:</span>
+    <input type="date" onchange="goToWeek(this.value)"></div>
+    <div class="tile-grid">`;
+  [...weeks].sort().forEach(monday => {
+    let planned = 0, kcal = 0;
+    for (let i=0;i<7;i++) {
+      const d = addDays(monday,i);
+      if ((days[d]?.meals||[]).some(isPlanned)) planned++;
+      kcal += calculateDayTotals(d).totalKcal;
+    }
+    html += `<a class="tile ${monday===currentWeek?'current':''}" href="#menu/${monday}">
+      <div class="tile-title">${formatWeek(monday)}${monday===currentWeek?'<span class="tile-badge">сейчас</span>':''}</div>
+      <div class="tile-sub">Запланировано дней: ${planned} из 7</div>
+      ${planned?`<div class="tile-sub">В среднем ${(kcal/planned).toFixed(0)} ккал в день</div>`:''}
+    </a>`;
+  });
+  return html + `</div>`;
+}
+
+function renderWeekView(monday) {
+  const today = toISO(new Date());
+  let html = `<div class="breadcrumbs"><a href="#menu">Меню</a> › Неделя ${formatWeek(monday)}</div>
+    <div class="week-toolbar">
+      <a class="small-btn" href="#menu/${addDays(monday,-7)}" style="text-decoration:none">← Предыдущая</a>
+      <a class="small-btn" href="#menu/${addDays(monday,7)}" style="text-decoration:none">Следующая →</a>
+    </div>
+    <h2>Неделя ${formatWeek(monday)}</h2>
+    <div class="tile-grid">`;
+  for (let i=0;i<7;i++) {
+    const d = addDays(monday,i);
+    const day = days[d];
+    const planned = day ? sortedMeals(day).filter(isPlanned) : [];
+    const kcal = calculateDayTotals(d).totalKcal;
+    html += `<a class="tile ${d===today?'current':''}" href="#menu/${monday}/${d}">
+      <div class="tile-title">${WEEKDAYS[i]}${d===today?'<span class="tile-badge">сегодня</span>':''}</div>
+      <div class="tile-sub">${formatDate(d)}${kcal?` · ${kcal.toFixed(0)} ккал`:''}</div>
+      ${planned.length
+        ? `<ul class="tile-meals">${planned.map(m=>`<li><span class="time">${esc(m.time)}</span>${esc(m.dish||m.name)}</li>`).join('')}</ul>`
+        : `<div class="tile-sub" style="margin-top:8px;font-style:italic">Ничего не запланировано</div>`}
+    </a>`;
+  }
+  return html + `</div>`;
+}
+
+function renderDayView(date) {
+  const monday = mondayOf(date);
+  const day = getDay(date);
+  let html = `<div class="breadcrumbs">
+    <a href="#menu">Меню</a> › <a href="#menu/${monday}">Неделя ${formatWeek(monday)}</a> › ${weekdayName(date)}, ${formatDate(date)}
+    </div>
+    <div class="week-toolbar">
+      <a class="small-btn" href="#menu/${mondayOf(addDays(date,-1))}/${addDays(date,-1)}" style="text-decoration:none">← Предыдущий день</a>
+      <a class="small-btn" href="#menu/${mondayOf(addDays(date,1))}/${addDays(date,1)}" style="text-decoration:none">Следующий день →</a>
+    </div>
+    <h2>${weekdayName(date)}, ${formatDate(date)}</h2>`;
+
+  sortedMeals(day).forEach(meal => {
+    const t = calculateMealTotals(meal); // Общий итог
+    const id = meal.id;
+    html += `<div class="meal-card">
+      <div class="meal-header">
+        <span>${esc(meal.name)}
+          <input type="time" value="${esc(meal.time)}" onchange="updateMeal('${id}','time',this.value,true)">
+        </span>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <button class="small-btn" onclick="openAddRecipeToMeal('${id}')" style="background:#eaf2f8; border-color:#c8d6e5;">📖 Добавить с рецепта</button>
+          <span class="meal-total">
+            ${t.totalGrams.toFixed(0)} г · Б: ${t.totalProtein.toFixed(1)} г · Кл: ${t.totalFiber.toFixed(1)} г · ${t.totalKcal.toFixed(0)} ккал
+          </span>
+        </div>
+      </div>
+      <div class="meal-fields">
+        <label>Название блюда
+          <input type="text" value="${esc(meal.dish)}" placeholder="Например: Омлет с овощами"
+            onchange="updateMeal('${id}','dish',this.value.trim(), true)">
+        </label>
+        <div>
+          <label>Рецепт / план действий</label>`;
+    if (editingRecipes.has(id)) {
+      html += `<div style="margin-top:4px">
+        <textarea id="recipe-${id}" placeholder="1. Нарезать овощи&#10;2. Взбить яйца&#10;3. Жарить 5 минут">${esc(meal.recipe)}</textarea>
+      </div>
+      <div class="recipe-actions">
+        <button class="small-btn primary" onclick="saveRecipe('${id}')">Сохранить</button>
+        <button class="small-btn" onclick="cancelRecipe('${id}')">Отмена</button>
+      </div>`;
+    } else if (meal.recipe) {
+      html += `<div class="recipe-text" style="margin-top:4px">${esc(meal.recipe)}</div>
+        <div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">✏️ Редактировать</button></div>`;
+    } else {
+      html += `<div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">+ Добавить рецепт</button></div>`;
+    }
+    
+    // Блок с фото блюда
+    html += `</div>
+      <div class="meal-photo-row">
+        ${meal.imageUrl ? `<img src="${meal.imageUrl}" class="meal-img-preview" onclick="viewImage('${meal.imageUrl}')" title="Посмотреть фото">` : ''}
+        <label class="small-btn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+          📷 ${meal.imageUrl ? 'Изменить фото' : 'Добавить фото блюда'}
+          <input type="file" accept="image/*" style="display: none;" onchange="handleMealImageUpload('${id}', this.files[0])">
+        </label>
+      </div>
+    </div>`; // Закрываем meal-fields
+
+    // Блоки пользователей
+    html += `<div class="profiles-meal-grid">`;
+    profiles.forEach(profile => {
+        const pItems = meal.userItems[profile.id] || [];
+        const pt = calculateMealTotals(meal, profile.id);
+        html += `<div class="profile-meal-section">
+            <div class="profile-meal-header">
+                <span>Для: ${esc(profile.name || 'Без имени')}</span>
+                <span class="stats">Вес: ${pt.totalGrams.toFixed(0)}г | Б: ${pt.totalProtein.toFixed(1)}г | Кл: ${pt.totalFiber.toFixed(1)}г | ${pt.totalKcal.toFixed(0)} ккал</span>
+            </div>`;
+        
+        if (pItems.length === 0) {
+            html += `<div class="empty-msg" style="font-size:0.8rem; padding:5px;">Нет продуктов</div>`;
+        } else {
+            html += `<table style="margin-top:0;"><thead><tr>
+              <th>Продукт</th><th>Кол-во</th><th></th>
+            </tr></thead><tbody>`;
+            pItems.forEach((item, idx) => {
+                const p = products.find(x => String(x.id) === String(item.productId));
+                if (!p) return;
+                const qtyDisplay = p.unitType === 'pc' && p.gramPerPiece
+                  ? `${(item.grams / p.gramPerPiece).toFixed(2)} шт (${item.grams.toFixed(0)} г)`
+                  : `${item.grams} г`;
+                html += `<tr>
+                    <td style="padding:6px 4px;">${esc(p.name)}</td>
+                    <td style="padding:6px 4px;">${qtyDisplay}</td>
+                    <td style="padding:6px 4px; width:30px;"><button class="delete-btn" style="padding:2px 6px; font-size:0.7rem;" onclick="removeItem('${id}','${profile.id}',${idx})">✕</button></td>
+                </tr>`;
+            });
+            html += `</tbody></table>`;
+        }
+
+        html += `<div class="add-item-row" style="margin-top:5px;">
+            <select id="select-${id}-${profile.id}" onchange="updateMealInputHint('${id}','${profile.id}')" style="font-size:0.85rem; padding:4px; flex:1;">
+                <option value="">-- Продукт --</option>
+                ${products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
+            </select>
+            <input type="number" id="qty-${id}-${profile.id}" placeholder="Кол-во" style="width:70px; font-size:0.85rem; padding:4px;" min="0.01" step="0.01">
+            <span class="add-item-unit" id="unit-${id}-${profile.id}" style="font-size:0.8rem;"></span>
+            <button onclick="addItemToMeal('${id}','${profile.id}')" style="font-size:0.8rem; padding:4px 8px;">+</button>
+        </div>`;
+        
+        html += `</div>`; // close profile-meal-section
+    });
+    html += `</div>`; // close profiles-meal-grid
+
+    html += `</div>`; // close meal-card
+  });
+
+  // Общие итоги за день
+  const tDay = calculateDayTotals(date);
+  html += `<div class="day-summary" style="margin-bottom:15px;">
+    <div class="summary-item"><div class="label">Общий вес</div><div class="value">${tDay.totalGrams.toFixed(0)} г</div></div>
+    <div class="summary-item"><div class="label">Общие Белки</div><div class="value">${tDay.totalProtein.toFixed(1)} г</div></div>
+    <div class="summary-item"><div class="label">Общая Клетчатка</div><div class="value">${tDay.totalFiber.toFixed(1)} г</div></div>
+    <div class="summary-item"><div class="label">Общие Ккал</div><div class="value">${tDay.totalKcal.toFixed(0)}</div></div>
+  </div>`;
+
+  // Итоги по каждому пользователю за день
+  html += `<h3 style="margin-top:20px;">Итоги за день по пользователям</h3>`;
+  html += `<div class="norms" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">`;
+  profiles.forEach(p => {
+      const pt = calculateDayTotals(date, p.id);
+      html += `<div class="norm" style="text-align:left; padding:15px;">
+          <div class="label" style="font-size:1rem; margin-bottom:10px; color:var(--accent);">${esc(p.name || 'Без имени')}</div>
+          <div style="font-size:0.9rem; display:flex; flex-direction:column; gap:4px;">
+              <span>Вес: <strong>${pt.totalGrams.toFixed(0)} г</strong></span>
+              <span>Белки: <strong>${pt.totalProtein.toFixed(1)} г</strong></span>
+              <span>Клетчатка: <strong>${pt.totalFiber.toFixed(1)} г</strong></span>
+              <span>Калории: <strong>${pt.totalKcal.toFixed(0)} ккал</strong></span>
+          </div>
+      </div>`;
+  });
+  html += `</div>`;
+
+  return html;
+}
+
+/* ============ NAV ============ */
+function renderAll() { 
+  renderAboutSection(); 
+  renderProducts(); 
+  renderShoppingList();
+  renderMenu(); 
+  renderRecipes();
+}
+
+function showSection() {
+  const tabs = ['new', 'about', 'products', 'shopping', 'menu', 'recipes'];
+  const [section, week, day] = location.hash.slice(1).split('/');
+  
+  const current = tabs.includes(section) ? section : 'new';
+  
+  if (current === 'new') {
+    dailyViewDate = toISO(new Date());
+  }
+  
+  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v||'');
+  menuDay  = current==='menu' && isDate(day) ? day : null;
+  menuWeek = current==='menu' && isDate(week) ? mondayOf(menuDay||week) : null;
+  editingRecipes.clear();
+  
+  if (current === 'menu') {
+    renderMenu();
+  } else if (current === 'shopping') {
+    renderShoppingList();
+  } else if (current === 'recipes') {
+    renderRecipes();
+  } else if (current === 'new') {
+    renderDailyMenu();
+  }
+  window.scrollTo(0,0);
+  
+  tabs.forEach(t => {
+    document.getElementById(`section-${t}`).classList.toggle('active', t===current);
+    document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t===current);
+  });
+
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+}
+window.showSection = showSection;
+window.addEventListener('hashchange', showSection);
+
+/* ============ INIT / AUTH STATE ============ */
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    currentUser = { id: user.uid, email: user.email };
+    document.getElementById('headerUserName').textContent = user.email;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+
+    try {
+      await loadUserData(user.uid);
+    } catch (e) {
+      console.error('Ошибка загрузки данных:', e);
+    }
+
+    if (!location.hash || location.hash === '#') location.hash = '#new';
+    showSection();
+    renderAll();
+  } else {
+    currentUser = null;
+    profiles = [defaultProfile()];
+    products = [];
+    days = {};
+    recipes = [];
+    menuWeek = null;
+    menuDay = null;
+    dailyViewDate = toISO(new Date());
+    editingRecipes.clear();
+    tempRecipeItems = [];
+    pendingMealId = null;
+
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('loginPhone').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('regPhone').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('regError').textContent = '';
+  }
+});
+</script>
+</body>
+</html>

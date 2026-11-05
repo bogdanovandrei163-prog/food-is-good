@@ -2003,4 +2003,45 @@ window.addEventListener('hashchange', showSection);
 /* ============ INIT / AUTH STATE ============ */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    currentUser = { id: user
+    currentUser = { id: user.uid, email: user.email };
+    document.getElementById('headerUserName').textContent = user.email;
+    document.getElementById('authScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+
+    try {
+      await loadUserData(user.uid);
+      await loadGlobalRecipes(); 
+    } catch (e) {
+      console.error('Ошибка загрузки данных:', e);
+    }
+
+    if (!location.hash || location.hash === '#') location.hash = '#new';
+    showSection();
+    renderAll();
+  } else {
+    currentUser = null;
+    profiles = [defaultProfile()];
+    products = [];
+    days = {};
+    recipes = [];
+    menuWeek = null;
+    menuDay = null;
+    dailyViewDate = toISO(new Date());
+    editingRecipes.clear();
+    tempRecipeItems = [];
+    pendingMealId = null;
+    currentRecipeFilter = 'all';
+
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('authScreen').classList.remove('hidden');
+    document.getElementById('loginPhone').value = '';
+    document.getElementById('loginPassword').value = '';
+    document.getElementById('regPhone').value = '';
+    document.getElementById('regPassword').value = '';
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('regError').textContent = '';
+  }
+});
+</script>
+</body>
+</html>

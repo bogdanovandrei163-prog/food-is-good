@@ -1319,7 +1319,6 @@ function renderRecipes() {
       
       <div class="dm-body">
         <div class="dm-dish">${esc(r.name)}</div>
-        ${r.description ? `<div style="font-size:0.85rem; color:#666; margin-bottom:10px; white-space:pre-wrap;">${esc(r.description)}</div>` : ''}
         
         <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px;">
           <strong style="font-size:0.85rem; display:block; margin-bottom:5px;">Ингредиенты:</strong>
@@ -1385,6 +1384,11 @@ window.applyRecipeToMeal = (recipeId) => {
   
   if (!meal.dish) {
     meal.dish = recipe.name;
+  }
+  
+  // Переносим описание (рецепт) из карточки рецепта
+  if (recipe.description) {
+    meal.recipe = recipe.description;
   }
   
   // Закрепляем фото рецепта за блюдом

@@ -429,7 +429,18 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 <div id="selectRecipeModal" class="modal hidden">
   <div class="modal-content">
     <h3>Выберите рецепт для добавления</h3>
-    <div id="selectRecipeList" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;">
+    
+    <!-- Фильтры для модального окна -->
+    <div id="modalRecipeFilters" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
+      <button class="small-btn primary" data-filter="all" onclick="setModalRecipeFilter('all')">Все</button>
+      <button class="small-btn" data-filter="Завтрак" onclick="setModalRecipeFilter('Завтрак')">Завтрак</button>
+      <button class="small-btn" data-filter="Перекус" onclick="setModalRecipeFilter('Перекус')">Перекус</button>
+      <button class="small-btn" data-filter="Обед" onclick="setModalRecipeFilter('Обед')">Обед</button>
+      <button class="small-btn" data-filter="Полдник" onclick="setModalRecipeFilter('Полдник')">Полдник</button>
+      <button class="small-btn" data-filter="Ужин" onclick="setModalRecipeFilter('Ужин')">Ужин</button>
+    </div>
+
+    <div id="selectRecipeList" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
       <!-- filled by JS -->
     </div>
     <div class="modal-actions">
@@ -463,6 +474,7 @@ const editingRecipes = new Set();
 let tempRecipeItems = [];
 let pendingMealId = null;
 let currentRecipeFilter = 'all';
+let modalRecipeFilter = 'all';
 
 /* ============ UTILS ============ */
 function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -1460,24 +1472,61 @@ function renderRecipes() {
 /* ============ ДОБАВЛЕНИЕ РЕЦЕПТА В МЕНЮ ============ */
 window.openAddRecipeToMeal = (mealId) => {
   pendingMealId = mealId;
-  const modal = document.getElementById('selectRecipeModal');
+  modalRecipeFilter = 'all';
+  document.getElementById('selectRecipeModal').classList.remove('hidden');
+  updateModalRecipeFiltersUI();
+  renderModalRecipes();
+};
+
+window.setModalRecipeFilter = (filter) => {
+  modalRecipeFilter = filter;
+  updateModalRecipeFiltersUI();
+  renderModalRecipes();
+};
+
+window.updateModalRecipeFiltersUI = () => {
+  document.querySelectorAll('#modalRecipeFilters button').forEach(btn => {
+    btn.classList.toggle('primary', btn.dataset.filter === modalRecipeFilter);
+  });
+};
+
+window.renderModalRecipes = () => {
   const list = document.getElementById('selectRecipeList');
   
   if (recipes.length === 0) {
     list.innerHTML = '<div class="empty-msg">Нет сохранённых рецептов. Сначала создайте рецепт в разделе «Рецепты».</div>';
-  } else {
-    list.innerHTML = recipes.map(r => 
-      `<div class="card" style="margin-bottom:8px; cursor:pointer; padding:12px; transition: background 0.2s;" onclick="applyRecipeToMeal('${r.id}')" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='#fff'">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <strong>${esc(r.name)}</strong>
-          <span style="font-size:0.75rem; background:#eaf2f8; padding:2px 6px; border-radius:4px; color:var(--accent);">${esc(r.category || 'Без категории')}</span>
-        </div>
-        ${r.description ? `<div style="font-size:0.85rem; color:#666; margin-top:3px;">${esc(r.description)}</div>` : ''}
-        ${r.items && r.items.length ? `<div style="font-size:0.8rem; color:#888; margin-top:5px;">Ингредиентов: ${r.items.length}</div>` : ''}
-      </div>`
-    ).join('');
+    return;
   }
-  modal.classList.remove('hidden');
+
+  const filtered = recipes.filter(r => modalRecipeFilter === 'all' || r.category === modalRecipeFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-msg">В этой категории пока нет рецептов.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(r => {
+    let cardStyle = 'background-color: #fff;';
+    if (r.imageUrl) {
+      cardStyle = `background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('${r.imageUrl}'); background-size: cover; background-position: center;`;
+    }
+    
+    return `
+      <div class="card" style="margin-bottom:0; cursor:pointer; padding:15px; border-radius:10px; border: 1px solid var(--border); position: relative; overflow: hidden; ${cardStyle} transition: transform 0.2s;" 
+           onclick="applyRecipeToMeal('${r.id}')" 
+           onmouseover="this.style.transform='scale(1.02)'" 
+           onmouseout="this.style.transform='scale(1)'">
+        <div style="position: relative; z-index: 1;">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <strong style="color: #000; font-size: 1.1rem;">${esc(r.name)}</strong>
+            <span style="font-size:0.75rem; background:#eaf2f8; padding:2px 6px; border-radius:4px; color:var(--accent); font-weight:600;">${esc(r.category || 'Без категории')}</span>
+          </div>
+          ${r.description ? `<div style="font-size:0.85rem; color:#333; margin-top:5px;">${esc(r.description)}</div>` : ''}
+          ${r.items && r.items.length ? `<div style="font-size:0.8rem; color:#555; margin-top:8px; font-weight:600;">Ингредиентов: ${r.items.length}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 };
 
 window.closeSelectRecipeModal = () => {
@@ -2075,6 +2124,7 @@ onAuthStateChanged(auth, async (user) => {
     tempRecipeItems = [];
     pendingMealId = null;
     currentRecipeFilter = 'all';
+    modalRecipeFilter = 'all';
 
     document.getElementById('app').classList.add('hidden');
     document.getElementById('authScreen').classList.remove('hidden');

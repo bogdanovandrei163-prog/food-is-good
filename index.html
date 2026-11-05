@@ -552,7 +552,6 @@ async function persist() {
   if (!auth.currentUser) return;
   const docRef = doc(db, 'userData', auth.currentUser.uid);
   try {
-    // recipes больше не сохраняем в userData, они теперь в отдельной коллекции
     await setDoc(docRef, { profiles, products, days }, { merge: true });
   } catch (e) {
     console.error('Ошибка сохранения:', e);
@@ -1346,7 +1345,6 @@ window.applyRecipeToMeal = (recipeId) => {
     });
   });
   
-  // Автоматически ставим название блюда, если оно пустое
   if (!meal.dish) {
     meal.dish = recipe.name;
   }

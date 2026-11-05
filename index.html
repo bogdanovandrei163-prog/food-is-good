@@ -1025,6 +1025,17 @@ window.editStock = (id) => {
   }
 };
 
+window.clearStock = (id) => {
+    const p = products.find(x => String(x.id) === String(id));
+    if (p) {
+        if (!confirm(`Обнулить остаток продукта "${p.name}"?`)) return;
+        p.stock = 0;
+        persist();
+        renderStock();
+        renderProducts();
+    }
+};
+
 function renderStock() {
   const c = document.getElementById('stockContainer');
   if (!c) return;
@@ -1057,7 +1068,7 @@ function renderStock() {
       <td style="color: var(--success); font-weight: 600;">${displayGrams.toFixed(1)} г</td>
       <td style="white-space:nowrap">
         <button class="small-btn" onclick="editStock('${p.id}')" title="Редактировать остаток">✏️</button>
-        <button class="delete-btn" onclick="deleteProduct('${p.id}')" title="Удалить продукт">✕</button>
+        <button class="delete-btn" onclick="clearStock('${p.id}')" title="Обнулить остаток">✕</button>
       </td>
     </tr>`;
   });

@@ -53,7 +53,7 @@ input,select,textarea{font-family:inherit}
 .form-grid label{display:flex;flex-direction:column;gap:4px;font-size:.85rem;color:#555}
 .primary-btn{padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-weight:600;font-size:.95rem;transition:background .2s}
 .primary-btn:hover{background:var(--accent-hover)}
-.small-btn{padding:6px 12px;border:1px solid var(--border);background:#fff;color:var(--text);border-radius:6px;font-size:.85rem;font-weight:600}
+.small-btn{padding:6px 12px;border:1px solid var(--border);background:#fff;color:var(--text);border-radius:6px;font-size:.85rem;font-weight:600; transition: all 0.2s;}
 .small-btn:hover{background:#f8fafc}
 .small-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .small-btn.primary:hover{background:var(--accent-hover)}
@@ -70,31 +70,21 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .norm .label{font-size:.8rem;color:#555;text-transform:uppercase;letter-spacing:1px}
 .norm .value{font-size:1.6rem;font-weight:700}
 
-/* --- СТИЛИ ДЛЯ ДАШБОРДА МЕНЮ --- */
-.daily-menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px; }
-.daily-meal-card { background: #fff; border: 2px solid #c8d6e5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; box-shadow: 0 2px 8px rgba(0,0,0,.05); cursor: pointer; }
-.daily-meal-card:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,.15); }
-.dm-header { font-weight: 700; font-size: 1.1rem; margin-bottom: 12px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-.dm-image { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border); }
+/* --- СТИЛИ ДЛЯ ДАШБОРДА МЕНЮ И РЕЦЕПТОВ --- */
+.daily-menu-grid, .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px; }
+.daily-meal-card, .recipe-card { background: #fff; border: 2px solid #c8d6e5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.daily-meal-card:hover, .recipe-card:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,.15); }
+.dm-header { font-weight: 700; font-size: 1.1rem; margin-bottom: 12px; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+.dm-image { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border); cursor: pointer; }
 .dm-body { flex: 1; margin-bottom: 15px; }
 .dm-dish { font-weight: 600; font-size: 1.05rem; color: var(--text); margin-bottom: 12px; line-height: 1.3; }
-.dm-nutrition { font-size: 0.9rem; color: #555; display: flex; flex-direction: column; gap: 4px; }
-.dm-footer { text-align: right; font-size: 0.9rem; color: #888; font-weight: 600; }
+.dm-footer { text-align: right; font-size: 0.9rem; color: #888; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
 
 /* --- БЛОКИ ПРОФИЛЕЙ В МЕНЮ --- */
 .profiles-meal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
 .profile-meal-section { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
 .profile-meal-header { font-weight: 700; font-size: 0.95rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;}
 .profile-meal-header .stats { font-size: 0.8rem; color: #666; font-weight: normal; }
-
-/* --- СТИЛИ ДЛЯ РЕЦЕПТОВ --- */
-.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-top: 15px; }
-.recipe-card { background: #fff; border: 2px solid #c8d6e5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
-.recipe-card:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,.15); }
-.recipe-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
-.recipe-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border); cursor: pointer; }
-.recipe-desc { font-size: 0.85rem; color: #666; margin-top: 5px; white-space: pre-wrap; }
-.recipe-ingredients-box { margin-top: auto; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
 
 /* --- СТИЛИ ДЛЯ ПРОДУКТОВ --- */
 .store-group{margin-bottom:18px}
@@ -283,11 +273,21 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <!-- ============ РАЗДЕЛ РЕЦЕПТЫ ============ -->
     <section class="section" id="section-recipes">
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:15px">
-          <h2 style="margin:0;border:none;padding:0">📖 Рецепты</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:15px;">
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:15px;">
+            <h2 style="margin:0; border:none; padding:0;">📖 Рецепты</h2>
+            <div id="recipeFilters" style="display:flex; gap:5px; flex-wrap:wrap;">
+              <button class="small-btn primary" data-filter="all" onclick="setRecipeFilter('all')">Все</button>
+              <button class="small-btn" data-filter="Завтрак" onclick="setRecipeFilter('Завтрак')">Завтрак</button>
+              <button class="small-btn" data-filter="Перекус" onclick="setRecipeFilter('Перекус')">Перекус</button>
+              <button class="small-btn" data-filter="Обед" onclick="setRecipeFilter('Обед')">Обед</button>
+              <button class="small-btn" data-filter="Полдник" onclick="setRecipeFilter('Полдник')">Полдник</button>
+              <button class="small-btn" data-filter="Ужин" onclick="setRecipeFilter('Ужин')">Ужин</button>
+            </div>
+          </div>
           <button class="primary-btn" onclick="openRecipeModal()">+ Добавить рецепт</button>
         </div>
-        <div id="recipesList"></div>
+        <div id="recipesList" class="recipe-grid"></div>
       </div>
     </section>
     
@@ -375,6 +375,15 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
       
       <div class="form-grid" style="align-items: start;">
         <label>Название рецепта *<input type="text" id="editRecipeName" required></label>
+        <label>Категория
+          <select id="editRecipeCategory" required>
+            <option value="Завтрак">Завтрак</option>
+            <option value="Перекус">Перекус</option>
+            <option value="Обед">Обед</option>
+            <option value="Полдник">Полдник</option>
+            <option value="Ужин">Ужин</option>
+          </select>
+        </label>
         <label>Фото рецепта (необязательно)
           <input type="file" id="editRecipeImageFile" accept="image/*" style="padding: 8px;" onchange="handleRecipeImageChange(this.files[0])">
         </label>
@@ -424,7 +433,8 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 import {
   auth, db,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
-  doc, getDoc, setDoc
+  doc, getDoc, setDoc,
+  collection, addDoc, updateDoc, deleteDoc, getDocs
 } from './firebase-config.js';
 
 /* ============ CONSTANTS ============ */
@@ -443,6 +453,7 @@ let dailyViewDate = toISO(new Date());
 const editingRecipes = new Set();
 let tempRecipeItems = [];
 let pendingMealId = null;
+let currentRecipeFilter = 'all';
 
 /* ============ UTILS ============ */
 function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
@@ -506,7 +517,6 @@ async function loadUserData(uid) {
     }
     products = Array.isArray(d.products) ? d.products : [];
     days = (d.days && typeof d.days === 'object') ? d.days : {};
-    recipes = Array.isArray(d.recipes) ? d.recipes : [];
 
     if (profiles.length > 0) {
       Object.values(days).forEach(day => {
@@ -525,7 +535,16 @@ async function loadUserData(uid) {
     }
   } else {
     profiles = [defaultProfile()];
-    await setDoc(docRef, { profiles, products: [], days: {}, recipes: [] });
+    await setDoc(docRef, { profiles, products: [], days: {} });
+  }
+}
+
+async function loadGlobalRecipes() {
+  try {
+    const querySnapshot = await getDocs(collection(db, "recipes"));
+    recipes = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (e) {
+    console.error("Ошибка загрузки глобальных рецептов:", e);
   }
 }
 
@@ -533,7 +552,8 @@ async function persist() {
   if (!auth.currentUser) return;
   const docRef = doc(db, 'userData', auth.currentUser.uid);
   try {
-    await setDoc(docRef, { profiles, products, days, recipes }, { merge: true });
+    // recipes больше не сохраняем в userData, они теперь в отдельной коллекции
+    await setDoc(docRef, { profiles, products, days }, { merge: true });
   } catch (e) {
     console.error('Ошибка сохранения:', e);
   }
@@ -789,7 +809,6 @@ window.handleProductSave = async (event) => {
     renderProducts();
     renderShoppingList(); 
     renderMenu(); 
-    renderRecipes(); // refresh recipe ingredient names if products changed
   } catch (e) {
     console.error(e);
     alert('Ошибка при сохранении: ' + e.message);
@@ -815,7 +834,6 @@ window.deleteProduct = (id) => {
   renderProducts();
   renderShoppingList(); 
   renderMenu();
-  renderRecipes();
 };
 
 function productSubtotal(p) {
@@ -1063,9 +1081,14 @@ window.openRecipeModal = (id) => {
   if (id) {
     const r = recipes.find(x => String(x.id) === String(id));
     if (!r) return;
+    if (r.authorId !== auth.currentUser.uid) {
+      alert('Вы можете редактировать только свои рецепты');
+      return;
+    }
     document.getElementById('recipeModalTitle').textContent = 'Редактировать рецепт';
     document.getElementById('editRecipeId').value = r.id;
     document.getElementById('editRecipeName').value = r.name;
+    document.getElementById('editRecipeCategory').value = r.category || 'Завтрак';
     document.getElementById('editRecipeDesc').value = r.description || '';
     tempRecipeItems = r.items.map(it => ({ ...it }));
     
@@ -1076,6 +1099,7 @@ window.openRecipeModal = (id) => {
     }
   } else {
     document.getElementById('recipeModalTitle').textContent = 'Новый рецепт';
+    document.getElementById('editRecipeCategory').value = 'Завтрак';
   }
   
   renderRecipeIngredientsList();
@@ -1174,6 +1198,7 @@ window.handleRecipeSave = async (event) => {
   event.preventDefault();
   const id = document.getElementById('editRecipeId').value;
   const name = document.getElementById('editRecipeName').value.trim();
+  const category = document.getElementById('editRecipeCategory').value;
   const description = document.getElementById('editRecipeDesc').value.trim();
   const imageUrl = document.getElementById('editRecipeImageUrl').value;
   
@@ -1181,39 +1206,62 @@ window.handleRecipeSave = async (event) => {
   
   const data = {
     name,
+    category,
     description,
     imageUrl,
+    authorId: auth.currentUser.uid,
+    authorEmail: auth.currentUser.email,
     items: tempRecipeItems.map(it => ({ productId: it.productId, grams: it.grams }))
   };
   
-  if (id) {
-    const idx = recipes.findIndex(r => String(r.id) === String(id));
-    if (idx !== -1) recipes[idx] = { ...recipes[idx], ...data };
-  } else {
-    recipes.push({ id: newId(), ...data });
+  try {
+    if (id) {
+      await updateDoc(doc(db, 'recipes', id), data);
+    } else {
+      await addDoc(collection(db, 'recipes'), data);
+    }
+    await loadGlobalRecipes();
+    closeRecipeModal();
+    renderRecipes();
+  } catch (e) {
+    console.error(e);
+    alert('Ошибка сохранения рецепта: ' + e.message);
   }
-  
-  await persist();
-  closeRecipeModal();
-  renderRecipes();
 };
 
-window.deleteRecipe = (id) => {
+window.deleteRecipe = async (id) => {
   if (!confirm('Удалить этот рецепт?')) return;
-  recipes = recipes.filter(r => String(r.id) !== String(id));
-  persist();
+  try {
+    await deleteDoc(doc(db, 'recipes', id));
+    await loadGlobalRecipes();
+    renderRecipes();
+  } catch (e) {
+    console.error(e);
+    alert('Ошибка удаления рецепта: ' + e.message);
+  }
+};
+
+window.setRecipeFilter = (filter) => {
+  currentRecipeFilter = filter;
+  document.querySelectorAll('#recipeFilters button').forEach(btn => {
+    btn.classList.toggle('primary', btn.dataset.filter === filter);
+  });
   renderRecipes();
 };
 
 function renderRecipes() {
   const c = document.getElementById('recipesList');
-  if (recipes.length === 0) {
-    c.innerHTML = '<div class="empty-msg">Список рецептов пуст. Нажмите «Добавить рецепт».</div>';
+  
+  const filtered = recipes.filter(r => currentRecipeFilter === 'all' || r.category === currentRecipeFilter);
+
+  if (filtered.length === 0) {
+    c.innerHTML = '<div class="empty-msg" style="grid-column: 1 / -1;">В этой категории пока нет рецептов.</div>';
     return;
   }
   
-  let html = '<div class="recipe-grid">';
-  recipes.forEach(r => {
+  let html = '';
+  filtered.forEach(r => {
+    const isMyRecipe = r.authorId === auth.currentUser.uid;
     let itemsHtml = '';
     r.items.forEach(it => {
       const p = products.find(x => String(x.id) === String(it.productId));
@@ -1224,29 +1272,32 @@ function renderRecipes() {
       itemsHtml += `<li>${esc(p.name)} — ${qtyStr}</li>`;
     });
     
-    html += `<div class="recipe-card">
-      <div class="recipe-card-header">
-        <div>
-          <h3 style="margin:0; font-size:1.15rem; color:var(--accent);">${esc(r.name)}</h3>
-          ${r.description ? `<div class="recipe-desc">${esc(r.description)}</div>` : ''}
-        </div>
-        <div style="display:flex; gap:5px; flex-shrink:0;">
-          <button class="small-btn" onclick="openRecipeModal('${r.id}')" title="Редактировать">✏️</button>
-          <button class="delete-btn" onclick="deleteRecipe('${r.id}')" title="Удалить">✕</button>
+    html += `<div class="daily-meal-card">
+      <div class="dm-header" style="display:flex; justify-content:space-between;">
+        <span>${esc(r.category || 'Рецепт')}</span>
+        <span style="font-size:0.75rem; font-weight:normal; color:#888; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(r.authorEmail)}">Автор: ${esc(r.authorEmail ? r.authorEmail.split('@')[0] : 'Неизвестен')}</span>
+      </div>
+      
+      ${r.imageUrl ? `<img src="${r.imageUrl}" class="dm-image" onclick="viewImage('${r.imageUrl}')" title="Посмотреть фото">` : ''}
+      
+      <div class="dm-body">
+        <div class="dm-dish">${esc(r.name)}</div>
+        ${r.description ? `<div style="font-size:0.85rem; color:#666; margin-bottom:10px; white-space:pre-wrap;">${esc(r.description)}</div>` : ''}
+        
+        <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px;">
+          <strong style="font-size:0.85rem; display:block; margin-bottom:5px;">Ингредиенты:</strong>
+          <ul style="margin:0; padding-left:20px; font-size:0.85rem; color:#444;">
+            ${itemsHtml || '<li style="list-style:none;color:#999;padding-left:0;">Нет ингредиентов</li>'}
+          </ul>
         </div>
       </div>
       
-      ${r.imageUrl ? `<img src="${r.imageUrl}" class="recipe-img" onclick="viewImage('${r.imageUrl}')" title="Посмотреть фото">` : ''}
-      
-      <div class="recipe-ingredients-box">
-        <strong style="font-size:0.9rem; display:block; margin-bottom:5px;">Ингредиенты:</strong>
-        <ul style="margin:0; padding-left:20px; font-size:0.85rem; color:#444;">
-          ${itemsHtml || '<li style="list-style:none;color:#999;padding-left:0;">Нет ингредиентов</li>'}
-        </ul>
+      <div class="dm-footer" style="margin-top:15px; display:flex; justify-content:flex-end; gap:5px;">
+        ${isMyRecipe ? `<button class="small-btn" onclick="openRecipeModal('${r.id}')" title="Редактировать">✏️ Редактировать</button>` : ''}
+        ${isMyRecipe ? `<button class="delete-btn" onclick="deleteRecipe('${r.id}')" title="Удалить">✕</button>` : ''}
       </div>
     </div>`;
   });
-  html += '</div>';
   c.innerHTML = html;
 }
 
@@ -1261,7 +1312,10 @@ window.openAddRecipeToMeal = (mealId) => {
   } else {
     list.innerHTML = recipes.map(r => 
       `<div class="card" style="margin-bottom:8px; cursor:pointer; padding:12px; transition: background 0.2s;" onclick="applyRecipeToMeal('${r.id}')" onmouseover="this.style.background='#f0f4f8'" onmouseout="this.style.background='#fff'">
-        <strong>${esc(r.name)}</strong>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <strong>${esc(r.name)}</strong>
+          <span style="font-size:0.75rem; background:#eaf2f8; padding:2px 6px; border-radius:4px; color:var(--accent);">${esc(r.category || 'Без категории')}</span>
+        </div>
         ${r.description ? `<div style="font-size:0.85rem; color:#666; margin-top:3px;">${esc(r.description)}</div>` : ''}
         ${r.items && r.items.length ? `<div style="font-size:0.8rem; color:#888; margin-top:5px;">Ингредиентов: ${r.items.length}</div>` : ''}
       </div>`
@@ -1291,6 +1345,11 @@ window.applyRecipeToMeal = (recipeId) => {
       }
     });
   });
+  
+  // Автоматически ставим название блюда, если оно пустое
+  if (!meal.dish) {
+    meal.dish = recipe.name;
+  }
   
   persist();
   renderMenu();
@@ -1774,6 +1833,7 @@ onAuthStateChanged(auth, async (user) => {
 
     try {
       await loadUserData(user.uid);
+      await loadGlobalRecipes(); // Загружаем общие рецепты
     } catch (e) {
       console.error('Ошибка загрузки данных:', e);
     }
@@ -1793,6 +1853,7 @@ onAuthStateChanged(auth, async (user) => {
     editingRecipes.clear();
     tempRecipeItems = [];
     pendingMealId = null;
+    currentRecipeFilter = 'all';
 
     document.getElementById('app').classList.add('hidden');
     document.getElementById('authScreen').classList.remove('hidden');

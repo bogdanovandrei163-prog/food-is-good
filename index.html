@@ -202,6 +202,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <a class="tab" href="#recipes" data-tab="recipes">📖 Рецепты</a>
     <a class="tab" href="#products" data-tab="products">🛒 Продукты</a>
     <a class="tab" href="#shopping" data-tab="shopping">🛍️ Список покупок</a>
+    <a class="tab" href="#stock" data-tab="stock">📦 Остатки</a>
     <a class="tab" href="#about" data-tab="about">👤 О себе</a>
   </div>
 </nav>
@@ -267,6 +268,14 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         </div>
 
         <div id="shoppingContainer"></div>
+      </div>
+    </section>
+
+    <!-- ============ РАЗДЕЛ ОСТАТКИ ============ -->
+    <section class="section" id="section-stock">
+      <div class="card">
+        <h2>📦 Остатки продуктов</h2>
+        <div id="stockContainer"></div>
       </div>
     </section>
 
@@ -800,7 +809,7 @@ window.handleProductSave = async (event) => {
       const idx = products.findIndex(p => String(p.id) === String(id));
       if (idx !== -1) products[idx] = { ...products[idx], ...data };
     } else {
-      products.push({ id: newId(), ...data });
+      products.push({ id: newId(), stock: 0, ...data });
     }
     
     await persist(); 
@@ -808,6 +817,7 @@ window.handleProductSave = async (event) => {
     renderProducts();
     renderShoppingList(); 
     renderMenu(); 
+    renderStock();
   } catch (e) {
     console.error(e);
     alert('Ошибка при сохранении: ' + e.message);
@@ -833,6 +843,7 @@ window.deleteProduct = (id) => {
   renderProducts();
   renderShoppingList(); 
   renderMenu();
+  renderStock();
 };
 
 function productSubtotal(p) {
@@ -846,6 +857,10 @@ function formatQty(p) {
 function formatPrice(p) {
   const pr = (p.price || 0).toFixed(2);
   return p.unitType === 'pc' ? `${pr} ₽/шт` : `${pr} ₽/100г`;
+}
+function formatStock(p) {
+  const s = parseFloat(p.stock) || 0;
+  return p.unitType === 'pc' ? `${s.toFixed(2)} шт` : `${s.toFixed(1)} г`;
 }
 
 window.viewImage = (url) => {
@@ -957,7 +972,7 @@ function renderProducts() {
       <div class="store-body"><table>
         <thead><tr>
           <th>Название</th><th>Ккал/100г</th><th>Б/100г</th><th>Кл/100г</th>
-          <th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th>
+          <th>Остаток</th><th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th>
         </tr></thead><tbody>`;
     items.forEach(p => {
       const subtotal = productSubtotal(p);
@@ -969,6 +984,7 @@ function renderProducts() {
         <td>${p.kcal}</td>
         <td>${p.protein}</td>
         <td>${p.fiber}</td>
+        <td>${formatStock(p)}</td>
         <td>${formatQty(p)}</td>
         <td>${formatPrice(p)}</td>
         <td><strong>${subtotal.toFixed(2)} ₽</strong></td>
@@ -987,6 +1003,32 @@ function renderProducts() {
     </div>`;
   });
   html += `<div class="grand-total"><span>💰 Итого по всем магазинам</span><span>${grandTotal.toFixed(2)} ₽</span></div>`;
+  c.innerHTML = html;
+}
+
+/* ============ STOCK RENDER ============ */
+function renderStock() {
+  const c = document.getElementById('stockContainer');
+  if (!c) return;
+  
+  const itemsInStock = products.filter(p => (parseFloat(p.stock) || 0) > 0);
+
+  if (itemsInStock.length === 0) {
+    c.innerHTML = '<div class="empty-msg">Остатков пока нет. Отметьте купленные продукты в разделе «Список покупок».</div>';
+    return;
+  }
+
+  let html = `<table><thead><tr><th>Название</th><th>Остаток</th><th>Стоимость остатка</th></tr></thead><tbody>`;
+  itemsInStock.sort((a,b) => a.name.localeCompare(b.name, 'ru')).forEach(p => {
+    const stockVal = parseFloat(p.stock) || 0;
+    const cost = p.unitType === 'pc' ? stockVal * (p.price || 0) : (stockVal/100) * (p.price || 0);
+    html += `<tr>
+      <td><strong>${esc(p.name)}</strong></td>
+      <td style="color: var(--success); font-weight: 600;">${formatStock(p)}</td>
+      <td>${cost.toFixed(2)} ₽</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
   c.innerHTML = html;
 }
 
@@ -1024,7 +1066,7 @@ window.addToShoppingList = () => {
   product.qty = qty;
   persist();
   renderShoppingList();
-  renderProducts(); // Обновить данные в разделе продукты
+  renderProducts(); 
   
   select.value = '';
   qtyInput.value = '';
@@ -1032,6 +1074,19 @@ window.addToShoppingList = () => {
 };
 
 window.checkoutProduct = (id) => {
+  const p = products.find(x => String(x.id) === String(id));
+  if (p) {
+    p.stock = (parseFloat(p.stock) || 0) + (parseFloat(p.qty) || 0);
+    p.qty = 0;
+    persist();
+    renderShoppingList();
+    renderProducts();
+    renderStock();
+  }
+};
+
+window.removeFromShoppingList = (id) => {
+  if (!confirm('Удалить товар из списка покупок?')) return;
   const p = products.find(x => String(x.id) === String(id));
   if (p) {
     p.qty = 0;
@@ -1045,7 +1100,6 @@ function renderShoppingList() {
   const c = document.getElementById('shoppingContainer');
   const select = document.getElementById('shopSelectProduct');
   
-  // Заполняем выпадающий список продуктами
   if (select) {
      const currentVal = select.value;
      select.innerHTML = '<option value="">-- Выберите продукт --</option>' + 
@@ -1070,8 +1124,6 @@ function renderShoppingList() {
 
   stores.forEach(store => {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
-    
-    // Считаем сумму по магазину
     const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
 
     html += `<div class="store-group">
@@ -1096,6 +1148,7 @@ function renderShoppingList() {
         <label class="shopping-check" title="Отметить как купленное">
           <input type="checkbox" onchange="checkoutProduct('${p.id}')">
         </label>
+        <button class="delete-btn" style="padding: 4px 8px; margin-left: 5px;" onclick="removeFromShoppingList('${p.id}')" title="Удалить из списка">✕</button>
       </li>`;
     });
 
@@ -1321,7 +1374,6 @@ function renderRecipes() {
         : `${it.grams.toFixed(0)} г`;
       itemsHtml += `<li>${esc(p.name)} — ${qtyStr}</li>`;
 
-      // Подсчет КБЖУ для всего рецепта
       const factor = it.grams / 100;
       totalKcal += (p.kcal || 0) * factor;
       totalProtein += (p.protein || 0) * factor;
@@ -1396,6 +1448,30 @@ window.applyRecipeToMeal = (recipeId) => {
   const meal = findMeal(pendingMealId);
   if (!meal) return;
   
+  // Проверка остатков для всех профилей
+  let stockError = false;
+  recipe.items.forEach(it => {
+      const prod = products.find(x => String(x.id) === String(it.productId));
+      if (prod) {
+          let qtyToDeduct = prod.unitType === 'pc' && prod.gramPerPiece ? (it.grams / prod.gramPerPiece) : it.grams;
+          qtyToDeduct *= profiles.length; // На всех пользователей
+          if ((parseFloat(prod.stock) || 0) < qtyToDeduct) stockError = true;
+      }
+  });
+  
+  if (stockError) {
+      if (!confirm('Внимание! На складе может не хватить некоторых продуктов для добавления этого рецепта всем пользователям. Продолжить?')) return;
+  }
+  
+  // Списание остатков
+  recipe.items.forEach(it => {
+      const prod = products.find(x => String(x.id) === String(it.productId));
+      if (prod) {
+          let qtyToDeduct = prod.unitType === 'pc' && prod.gramPerPiece ? (it.grams / prod.gramPerPiece) : it.grams;
+          prod.stock = (parseFloat(prod.stock) || 0) - (qtyToDeduct * profiles.length);
+      }
+  });
+
   profiles.forEach(p => {
     if (!meal.userItems[p.id]) meal.userItems[p.id] = [];
     recipe.items.forEach(it => {
@@ -1410,18 +1486,17 @@ window.applyRecipeToMeal = (recipeId) => {
     meal.dish = recipe.name;
   }
   
-  // Переносим описание (рецепт) из карточки рецепта
   if (recipe.description) {
     meal.recipe = recipe.description;
   }
   
-  // Закрепляем фото рецепта за блюдом
   if (recipe.imageUrl) {
     meal.imageUrl = recipe.imageUrl;
   }
   
   persist();
   renderMenu();
+  renderStock();
   closeSelectRecipeModal();
 };
 
@@ -1484,6 +1559,7 @@ window.addItemToMeal = (mealId, profileId) => {
   if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
   const product = products.find(p => String(p.id) === String(productId));
   if (!product) return;
+  
   let grams;
   if (product.unitType === 'pc') {
     if (!product.gramPerPiece) { alert('У продукта не указана граммовка 1 шт. Отредактируйте продукт.'); return; }
@@ -1491,19 +1567,36 @@ window.addItemToMeal = (mealId, profileId) => {
   } else {
     grams = qty;
   }
+  
+  // Проверка остатка
+  const currentStock = parseFloat(product.stock) || 0;
+  if (currentStock < qty) { 
+      alert(`Недостаточно продукта "${product.name}" на складе! В наличии: ${currentStock} ${product.unitType === 'pc' ? 'шт' : 'г'}`); 
+      return; 
+  }
+  product.stock = currentStock - qty;
+
   const meal = findMeal(mealId);
   if (!meal.userItems[profileId]) meal.userItems[profileId] = [];
   meal.userItems[profileId].push({ productId: product.id, grams });
   persist();
   renderMenu();
+  renderStock();
 };
 
 window.removeItem = (mealId, profileId, idx) => {
   const meal = findMeal(mealId);
   if (meal.userItems && meal.userItems[profileId]) {
+    const item = meal.userItems[profileId][idx];
+    const p = products.find(x => String(x.id) === String(item.productId));
+    if (p) {
+      let qtyToReturn = p.unitType === 'pc' && p.gramPerPiece ? (item.grams / p.gramPerPiece) : item.grams;
+      p.stock = (parseFloat(p.stock) || 0) + qtyToReturn;
+    }
     meal.userItems[profileId].splice(idx, 1);
     persist();
     renderMenu();
+    renderStock();
   }
 };
 
@@ -1514,27 +1607,38 @@ window.editMenuItem = (mealId, profileId, idx) => {
   const p = products.find(x => String(x.id) === String(item.productId));
   if (!p) return;
 
+  let oldQty = p.unitType === 'pc' && p.gramPerPiece ? (item.grams / p.gramPerPiece) : item.grams;
   let newVal;
+  
   if (p.unitType === 'pc' && p.gramPerPiece) {
-    const currentPieces = item.grams / p.gramPerPiece;
-    newVal = prompt(`Введите количество в штуках (1 шт = ${p.gramPerPiece} г):`, currentPieces.toFixed(2));
-    if (newVal !== null) {
-      const qty = parseFloat(newVal);
-      if (!isNaN(qty) && qty > 0) {
-        item.grams = qty * p.gramPerPiece;
-      }
-    }
+    newVal = prompt(`Введите количество в штуках (1 шт = ${p.gramPerPiece} г):`, oldQty.toFixed(2));
   } else {
     newVal = prompt(`Введите количество в граммах:`, item.grams.toFixed(0));
-    if (newVal !== null) {
-      const qty = parseFloat(newVal);
-      if (!isNaN(qty) && qty > 0) {
+  }
+  
+  if (newVal !== null) {
+    const qty = parseFloat(newVal);
+    if (!isNaN(qty) && qty > 0) {
+      const diff = qty - oldQty;
+      const currentStock = parseFloat(p.stock) || 0;
+      
+      if (diff > 0 && currentStock < diff) {
+        alert(`Недостаточно продукта на складе! В наличии: ${currentStock}`);
+        return;
+      }
+      
+      p.stock = currentStock - diff;
+      
+      if (p.unitType === 'pc' && p.gramPerPiece) {
+        item.grams = qty * p.gramPerPiece;
+      } else {
         item.grams = qty;
       }
+      persist();
+      renderMenu();
+      renderStock();
     }
   }
-  persist();
-  renderMenu();
 };
 
 window.updateMeal = (mealId, field, value, rerender) => {
@@ -1853,10 +1957,11 @@ function renderAll() {
   renderShoppingList();
   renderMenu(); 
   renderRecipes();
+  renderStock();
 }
 
 function showSection() {
-  const tabs = ['new', 'about', 'products', 'shopping', 'menu', 'recipes'];
+  const tabs = ['new', 'about', 'products', 'shopping', 'stock', 'menu', 'recipes'];
   const [section, week, day] = location.hash.slice(1).split('/');
   
   const current = tabs.includes(section) ? section : 'new';
@@ -1874,6 +1979,8 @@ function showSection() {
     renderMenu();
   } else if (current === 'shopping') {
     renderShoppingList();
+  } else if (current === 'stock') {
+    renderStock();
   } else if (current === 'recipes') {
     renderRecipes();
   } else if (current === 'new') {
@@ -1883,7 +1990,8 @@ function showSection() {
   
   tabs.forEach(t => {
     document.getElementById(`section-${t}`).classList.toggle('active', t===current);
-    document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t===current);
+    const tabEl = document.querySelector(`.tab[data-tab="${t}"]`);
+    if (tabEl) tabEl.classList.toggle('active', t===current);
   });
 
   document.getElementById('sidebar').classList.remove('open');
@@ -1895,45 +2003,4 @@ window.addEventListener('hashchange', showSection);
 /* ============ INIT / AUTH STATE ============ */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    currentUser = { id: user.uid, email: user.email };
-    document.getElementById('headerUserName').textContent = user.email;
-    document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-
-    try {
-      await loadUserData(user.uid);
-      await loadGlobalRecipes(); // Загружаем общие рецепты
-    } catch (e) {
-      console.error('Ошибка загрузки данных:', e);
-    }
-
-    if (!location.hash || location.hash === '#') location.hash = '#new';
-    showSection();
-    renderAll();
-  } else {
-    currentUser = null;
-    profiles = [defaultProfile()];
-    products = [];
-    days = {};
-    recipes = [];
-    menuWeek = null;
-    menuDay = null;
-    dailyViewDate = toISO(new Date());
-    editingRecipes.clear();
-    tempRecipeItems = [];
-    pendingMealId = null;
-    currentRecipeFilter = 'all';
-
-    document.getElementById('app').classList.add('hidden');
-    document.getElementById('authScreen').classList.remove('hidden');
-    document.getElementById('loginPhone').value = '';
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('regPhone').value = '';
-    document.getElementById('regPassword').value = '';
-    document.getElementById('loginError').textContent = '';
-    document.getElementById('regError').textContent = '';
-  }
-});
-</script>
-</body>
-</html>
+    currentUser = { id: user

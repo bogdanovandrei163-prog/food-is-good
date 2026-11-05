@@ -1007,6 +1007,24 @@ function renderProducts() {
 }
 
 /* ============ STOCK RENDER ============ */
+window.editStock = (id) => {
+  const p = products.find(x => String(x.id) === String(id));
+  if (!p) return;
+  const currentStock = parseFloat(p.stock) || 0;
+  let promptMsg = p.unitType === 'pc' ? `Введите новый остаток в штуках (текущий: ${currentStock} шт):` : `Введите новый остаток в граммах (текущий: ${currentStock} г):`;
+  let newVal = prompt(promptMsg, currentStock);
+  if (newVal !== null) {
+      const val = parseFloat(newVal);
+      if (!isNaN(val) && val >= 0) {
+          p.stock = val;
+          persist();
+          renderStock();
+          renderProducts();
+          renderShoppingList();
+      }
+  }
+};
+
 function renderStock() {
   const c = document.getElementById('stockContainer');
   if (!c) return;
@@ -1018,19 +1036,17 @@ function renderStock() {
     return;
   }
 
-  let html = `<table><thead><tr><th style="width: 60px;"></th><th>Название</th><th>Остаток</th></tr></thead><tbody>`;
+  let html = `<table><thead><tr><th style="width: 60px;"></th><th>Название</th><th>Остаток</th><th style="width: 100px;">Действия</th></tr></thead><tbody>`;
   itemsInStock.sort((a,b) => a.name.localeCompare(b.name, 'ru')).forEach(p => {
     const stockVal = parseFloat(p.stock) || 0;
     let displayGrams = 0;
     
-    // Конвертируем остаток в граммы, если продукт штучный
     if (p.unitType === 'pc') {
         displayGrams = stockVal * (parseFloat(p.gramPerPiece) || 0);
     } else {
         displayGrams = stockVal;
     }
     
-    // Отображение фото продукта
     const imgHtml = p.imageUrl 
         ? `<img src="${p.imageUrl}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: pointer;" onclick="viewImage('${p.imageUrl}')">`
         : `<div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f0f4f8; border-radius: 6px; border: 1px solid var(--border); color: #888; font-size: 1.2rem;">📦</div>`;
@@ -1039,6 +1055,10 @@ function renderStock() {
       <td>${imgHtml}</td>
       <td><strong>${esc(p.name)}</strong></td>
       <td style="color: var(--success); font-weight: 600;">${displayGrams.toFixed(1)} г</td>
+      <td style="white-space:nowrap">
+        <button class="small-btn" onclick="editStock('${p.id}')" title="Редактировать остаток">✏️</button>
+        <button class="delete-btn" onclick="deleteProduct('${p.id}')" title="Удалить продукт">✕</button>
+      </td>
     </tr>`;
   });
   html += `</tbody></table>`;

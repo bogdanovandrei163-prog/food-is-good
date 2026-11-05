@@ -1300,6 +1300,10 @@ function renderRecipes() {
   filtered.forEach(r => {
     const isMyRecipe = r.authorId === auth.currentUser.uid;
     let itemsHtml = '';
+    let totalKcal = 0;
+    let totalProtein = 0;
+    let totalFiber = 0;
+
     r.items.forEach(it => {
       const p = products.find(x => String(x.id) === String(it.productId));
       if (!p) return;
@@ -1307,6 +1311,12 @@ function renderRecipes() {
         ? `${(it.grams / p.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
         : `${it.grams.toFixed(0)} г`;
       itemsHtml += `<li>${esc(p.name)} — ${qtyStr}</li>`;
+
+      // Подсчет КБЖУ для всего рецепта
+      const factor = it.grams / 100;
+      totalKcal += (p.kcal || 0) * factor;
+      totalProtein += (p.protein || 0) * factor;
+      totalFiber += (p.fiber || 0) * factor;
     });
     
     html += `<div class="daily-meal-card" onclick="openRecipeDetails('${r.id}')" style="cursor: pointer;">
@@ -1325,6 +1335,11 @@ function renderRecipes() {
           <ul style="margin:0; padding-left:20px; font-size:0.85rem; color:#444;">
             ${itemsHtml || '<li style="list-style:none;color:#999;padding-left:0;">Нет ингредиентов</li>'}
           </ul>
+        </div>
+
+        <div style="font-size:0.85rem; margin-top:10px; border-top:1px dashed #eee; padding-top:8px; display:flex; justify-content:space-between; color:var(--accent); font-weight: 600;">
+           <span>Итого:</span>
+           <span>Б: ${totalProtein.toFixed(1)}г · Кл: ${totalFiber.toFixed(1)}г · ${totalKcal.toFixed(0)} ккал</span>
         </div>
       </div>
       

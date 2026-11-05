@@ -87,6 +87,15 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .profile-meal-header { font-weight: 700; font-size: 0.95rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;}
 .profile-meal-header .stats { font-size: 0.8rem; color: #666; font-weight: normal; }
 
+/* --- СТИЛИ ДЛЯ РЕЦЕПТОВ --- */
+.recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; margin-top: 15px; }
+.recipe-card { background: #fff; border: 2px solid #c8d6e5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.recipe-card:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,.15); }
+.recipe-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+.recipe-img { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; border: 1px solid var(--border); cursor: pointer; }
+.recipe-desc { font-size: 0.85rem; color: #666; margin-top: 5px; white-space: pre-wrap; }
+.recipe-ingredients-box { margin-top: auto; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+
 /* --- СТИЛИ ДЛЯ ПРОДУКТОВ --- */
 .store-group{margin-bottom:18px}
 .store-header{display:flex;justify-content:space-between;align-items:center;background:#eaf2f8;padding:10px 14px;border-radius:10px 10px 0 0;font-weight:700;border:1px solid var(--border);border-bottom:none}
@@ -362,8 +371,20 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <h3 id="recipeModalTitle">Новый рецепт</h3>
     <form id="recipeForm" onsubmit="handleRecipeSave(event)">
       <input type="hidden" id="editRecipeId">
-      <div class="form-grid">
+      <input type="hidden" id="editRecipeImageUrl">
+      
+      <div class="form-grid" style="align-items: start;">
         <label>Название рецепта *<input type="text" id="editRecipeName" required></label>
+        <label>Фото рецепта (необязательно)
+          <input type="file" id="editRecipeImageFile" accept="image/*" style="padding: 8px;" onchange="handleRecipeImageChange(this.files[0])">
+        </label>
+      </div>
+      
+      <div id="recipeImagePreviewContainer" class="hidden" style="margin-bottom: 15px;">
+        <img id="recipeImagePreview" src="" style="max-height: 150px; border-radius: 8px; border: 1px solid var(--border);" onclick="viewImage(this.src)">
+      </div>
+
+      <div class="form-grid">
         <label style="grid-column: 1 / -1;">Описание / Инструкция
           <textarea id="editRecipeDesc" style="min-height: 80px; width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit;"></textarea>
         </label>
@@ -1030,6 +1051,9 @@ window.openRecipeModal = (id) => {
   const modal = document.getElementById('recipeModal');
   document.getElementById('recipeForm').reset();
   document.getElementById('editRecipeId').value = '';
+  document.getElementById('editRecipeImageUrl').value = '';
+  document.getElementById('recipeImagePreviewContainer').classList.add('hidden');
+  document.getElementById('recipeImagePreview').src = '';
   tempRecipeItems = [];
 
   const sel = document.getElementById('recipeIngSelect');
@@ -1044,6 +1068,12 @@ window.openRecipeModal = (id) => {
     document.getElementById('editRecipeName').value = r.name;
     document.getElementById('editRecipeDesc').value = r.description || '';
     tempRecipeItems = r.items.map(it => ({ ...it }));
+    
+    if (r.imageUrl) {
+      document.getElementById('editRecipeImageUrl').value = r.imageUrl;
+      document.getElementById('recipeImagePreview').src = r.imageUrl;
+      document.getElementById('recipeImagePreviewContainer').classList.remove('hidden');
+    }
   } else {
     document.getElementById('recipeModalTitle').textContent = 'Новый рецепт';
   }
@@ -1056,6 +1086,19 @@ window.openRecipeModal = (id) => {
 window.closeRecipeModal = () => {
   document.getElementById('recipeModal').classList.add('hidden');
   tempRecipeItems = [];
+};
+
+window.handleRecipeImageChange = async (file) => {
+  if (!file) return;
+  try {
+    const url = await compressImage(file);
+    document.getElementById('editRecipeImageUrl').value = url;
+    const img = document.getElementById('recipeImagePreview');
+    img.src = url;
+    document.getElementById('recipeImagePreviewContainer').classList.remove('hidden');
+  } catch (e) {
+    alert('Ошибка загрузки фото: ' + e.message);
+  }
 };
 
 function renderRecipeIngredientsList() {
@@ -1132,12 +1175,14 @@ window.handleRecipeSave = async (event) => {
   const id = document.getElementById('editRecipeId').value;
   const name = document.getElementById('editRecipeName').value.trim();
   const description = document.getElementById('editRecipeDesc').value.trim();
+  const imageUrl = document.getElementById('editRecipeImageUrl').value;
   
   if (!name) { alert('Введите название рецепта'); return; }
   
   const data = {
     name,
     description,
+    imageUrl,
     items: tempRecipeItems.map(it => ({ productId: it.productId, grams: it.grams }))
   };
   
@@ -1167,7 +1212,7 @@ function renderRecipes() {
     return;
   }
   
-  let html = '<div class="tile-grid">';
+  let html = '<div class="recipe-grid">';
   recipes.forEach(r => {
     let itemsHtml = '';
     r.items.forEach(it => {
@@ -1179,21 +1224,24 @@ function renderRecipes() {
       itemsHtml += `<li>${esc(p.name)} — ${qtyStr}</li>`;
     });
     
-    html += `<div class="card" style="margin-bottom:15px; display:flex; flex-direction:column;">
-      <div style="display:flex; justify-content:space-between; align-items:start; gap:10px;">
+    html += `<div class="recipe-card">
+      <div class="recipe-card-header">
         <div>
-          <h3 style="margin:0; font-size:1.1rem;">${esc(r.name)}</h3>
-          ${r.description ? `<div style="font-size:0.9rem; color:#666; margin-top:5px;">${esc(r.description)}</div>` : ''}
+          <h3 style="margin:0; font-size:1.15rem; color:var(--accent);">${esc(r.name)}</h3>
+          ${r.description ? `<div class="recipe-desc">${esc(r.description)}</div>` : ''}
         </div>
         <div style="display:flex; gap:5px; flex-shrink:0;">
           <button class="small-btn" onclick="openRecipeModal('${r.id}')" title="Редактировать">✏️</button>
           <button class="delete-btn" onclick="deleteRecipe('${r.id}')" title="Удалить">✕</button>
         </div>
       </div>
-      <div style="margin-top:10px;">
-        <strong style="font-size:0.9rem;">Ингредиенты:</strong>
-        <ul style="margin:5px 0 0 20px; font-size:0.85rem; color:#444; padding:0;">
-          ${itemsHtml || '<li style="list-style:none;color:#999;">Нет ингредиентов</li>'}
+      
+      ${r.imageUrl ? `<img src="${r.imageUrl}" class="recipe-img" onclick="viewImage('${r.imageUrl}')" title="Посмотреть фото">` : ''}
+      
+      <div class="recipe-ingredients-box">
+        <strong style="font-size:0.9rem; display:block; margin-bottom:5px;">Ингредиенты:</strong>
+        <ul style="margin:0; padding-left:20px; font-size:0.85rem; color:#444;">
+          ${itemsHtml || '<li style="list-style:none;color:#999;padding-left:0;">Нет ингредиентов</li>'}
         </ul>
       </div>
     </div>`;
@@ -1329,6 +1377,36 @@ window.removeItem = (mealId, profileId, idx) => {
     persist();
     renderMenu();
   }
+};
+
+window.editMenuItem = (mealId, profileId, idx) => {
+  const meal = findMeal(mealId);
+  const item = meal.userItems[profileId][idx];
+  if (!item) return;
+  const p = products.find(x => String(x.id) === String(item.productId));
+  if (!p) return;
+
+  let newVal;
+  if (p.unitType === 'pc' && p.gramPerPiece) {
+    const currentPieces = item.grams / p.gramPerPiece;
+    newVal = prompt(`Введите количество в штуках (1 шт = ${p.gramPerPiece} г):`, currentPieces.toFixed(2));
+    if (newVal !== null) {
+      const qty = parseFloat(newVal);
+      if (!isNaN(qty) && qty > 0) {
+        item.grams = qty * p.gramPerPiece;
+      }
+    }
+  } else {
+    newVal = prompt(`Введите количество в граммах:`, item.grams.toFixed(0));
+    if (newVal !== null) {
+      const qty = parseFloat(newVal);
+      if (!isNaN(qty) && qty > 0) {
+        item.grams = qty;
+      }
+    }
+  }
+  persist();
+  renderMenu();
 };
 
 window.updateMeal = (mealId, field, value, rerender) => {
@@ -1574,7 +1652,7 @@ function renderDayView(date) {
             html += `<div class="empty-msg" style="font-size:0.8rem; padding:5px;">Нет продуктов</div>`;
         } else {
             html += `<table style="margin-top:0;"><thead><tr>
-              <th>Продукт</th><th>Кол-во</th><th></th>
+              <th>Продукт</th><th>Кол-во</th><th style="width:70px;"></th>
             </tr></thead><tbody>`;
             pItems.forEach((item, idx) => {
                 const p = products.find(x => String(x.id) === String(item.productId));
@@ -1585,7 +1663,10 @@ function renderDayView(date) {
                 html += `<tr>
                     <td style="padding:6px 4px;">${esc(p.name)}</td>
                     <td style="padding:6px 4px;">${qtyDisplay}</td>
-                    <td style="padding:6px 4px; width:30px;"><button class="delete-btn" style="padding:2px 6px; font-size:0.7rem;" onclick="removeItem('${id}','${profile.id}',${idx})">✕</button></td>
+                    <td style="padding:6px 4px; text-align:right; white-space:nowrap;">
+                        <button class="small-btn" style="padding:2px 6px; font-size:0.7rem;" onclick="editMenuItem('${id}','${profile.id}',${idx})" title="Редактировать кол-во">✏️</button>
+                        <button class="delete-btn" style="padding:2px 6px; font-size:0.7rem; margin-left:4px;" onclick="removeItem('${id}','${profile.id}',${idx})" title="Удалить">✕</button>
+                    </td>
                 </tr>`;
             });
             html += `</tbody></table>`;

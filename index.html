@@ -1018,14 +1018,27 @@ function renderStock() {
     return;
   }
 
-  let html = `<table><thead><tr><th>Название</th><th>Остаток</th><th>Стоимость остатка</th></tr></thead><tbody>`;
+  let html = `<table><thead><tr><th style="width: 60px;"></th><th>Название</th><th>Остаток</th></tr></thead><tbody>`;
   itemsInStock.sort((a,b) => a.name.localeCompare(b.name, 'ru')).forEach(p => {
     const stockVal = parseFloat(p.stock) || 0;
-    const cost = p.unitType === 'pc' ? stockVal * (p.price || 0) : (stockVal/100) * (p.price || 0);
+    let displayGrams = 0;
+    
+    // Конвертируем остаток в граммы, если продукт штучный
+    if (p.unitType === 'pc') {
+        displayGrams = stockVal * (parseFloat(p.gramPerPiece) || 0);
+    } else {
+        displayGrams = stockVal;
+    }
+    
+    // Отображение фото продукта
+    const imgHtml = p.imageUrl 
+        ? `<img src="${p.imageUrl}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: pointer;" onclick="viewImage('${p.imageUrl}')">`
+        : `<div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f0f4f8; border-radius: 6px; border: 1px solid var(--border); color: #888; font-size: 1.2rem;">📦</div>`;
+
     html += `<tr>
+      <td>${imgHtml}</td>
       <td><strong>${esc(p.name)}</strong></td>
-      <td style="color: var(--success); font-weight: 600;">${formatStock(p)}</td>
-      <td>${cost.toFixed(2)} ₽</td>
+      <td style="color: var(--success); font-weight: 600;">${displayGrams.toFixed(1)} г</td>
     </tr>`;
   });
   html += `</tbody></table>`;

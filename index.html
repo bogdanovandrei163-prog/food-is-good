@@ -893,6 +893,44 @@ window.openMealDetails = (date, mealId) => {
 };
 window.closeMealDetails = () => document.getElementById('mealDetailsModal').classList.add('hidden');
 
+// Просмотр деталей рецепта
+window.openRecipeDetails = (recipeId) => {
+  const r = recipes.find(x => String(x.id) === String(recipeId));
+  if (!r) return;
+
+  document.getElementById('detailsTitle').textContent = `${r.name} (${r.category || 'Рецепт'})`;
+  
+  let recipeText = r.description || 'Описание не указано.';
+  if (r.authorEmail) {
+     recipeText += `\n\nАвтор: ${r.authorEmail.split('@')[0]}`;
+  }
+  document.getElementById('detailsRecipe').textContent = recipeText;
+
+  let itemsHtml = `<div class="meal-details-profile" style="margin-bottom:10px;">
+          <div class="meal-details-profile-header">Ингредиенты</div>
+          <table style="margin:0;">
+              <thead><tr><th>Продукт</th><th>Кол-во</th></tr></thead>
+              <tbody>`;
+  if (r.items && r.items.length > 0) {
+    r.items.forEach(it => {
+        const prod = products.find(x => String(x.id) === String(it.productId));
+        if (prod) {
+            const qtyStr = prod.unitType === 'pc' && prod.gramPerPiece
+              ? `${(it.grams / prod.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
+              : `${it.grams.toFixed(0)} г`;
+            itemsHtml += `<tr><td>${esc(prod.name)}</td><td>${qtyStr}</td></tr>`;
+        }
+    });
+  } else {
+    itemsHtml += `<tr><td colspan="2" style="color:#888;font-style:italic;text-align:center;">Нет ингредиентов</td></tr>`;
+  }
+  itemsHtml += `</tbody></table></div>`;
+  
+  document.getElementById('detailsUsers').innerHTML = itemsHtml;
+  
+  document.getElementById('mealDetailsModal').classList.remove('hidden');
+};
+
 function renderProducts() {
   const c = document.getElementById('productsList');
   if (products.length === 0) {
@@ -1271,13 +1309,13 @@ function renderRecipes() {
       itemsHtml += `<li>${esc(p.name)} — ${qtyStr}</li>`;
     });
     
-    html += `<div class="daily-meal-card">
+    html += `<div class="daily-meal-card" onclick="openRecipeDetails('${r.id}')" style="cursor: pointer;">
       <div class="dm-header" style="display:flex; justify-content:space-between;">
         <span>${esc(r.category || 'Рецепт')}</span>
         <span style="font-size:0.75rem; font-weight:normal; color:#888; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(r.authorEmail)}">Автор: ${esc(r.authorEmail ? r.authorEmail.split('@')[0] : 'Неизвестен')}</span>
       </div>
       
-      ${r.imageUrl ? `<img src="${r.imageUrl}" class="dm-image" onclick="viewImage('${r.imageUrl}')" title="Посмотреть фото">` : ''}
+      ${r.imageUrl ? `<img src="${r.imageUrl}" class="dm-image" onclick="event.stopPropagation(); viewImage('${r.imageUrl}')" title="Посмотреть фото">` : ''}
       
       <div class="dm-body">
         <div class="dm-dish">${esc(r.name)}</div>
@@ -1291,7 +1329,7 @@ function renderRecipes() {
         </div>
       </div>
       
-      <div class="dm-footer" style="margin-top:15px; display:flex; justify-content:flex-end; gap:5px;">
+      <div class="dm-footer" style="margin-top:15px; display:flex; justify-content:flex-end; gap:5px;" onclick="event.stopPropagation()">
         ${isMyRecipe ? `<button class="small-btn" onclick="openRecipeModal('${r.id}')" title="Редактировать">✏️ Редактировать</button>` : ''}
         ${isMyRecipe ? `<button class="delete-btn" onclick="deleteRecipe('${r.id}')" title="Удалить">✕</button>` : ''}
       </div>
@@ -1347,6 +1385,11 @@ window.applyRecipeToMeal = (recipeId) => {
   
   if (!meal.dish) {
     meal.dish = recipe.name;
+  }
+  
+  // Закрепляем фото рецепта за блюдом
+  if (recipe.imageUrl) {
+    meal.imageUrl = recipe.imageUrl;
   }
   
   persist();

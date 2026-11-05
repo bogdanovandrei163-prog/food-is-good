@@ -1070,6 +1070,10 @@ function renderShoppingList() {
 
   stores.forEach(store => {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
+    
+    // Считаем сумму по магазину
+    const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
+
     html += `<div class="store-group">
       <div class="store-header">
         <span>🏪 ${esc(store)}</span>
@@ -1095,7 +1099,12 @@ function renderShoppingList() {
       </li>`;
     });
 
-    html += `</ul></div></div>`;
+    html += `</ul></div>
+      <div class="store-bottom-total">
+        <span>Итого по магазину</span>
+        <span>${storeTotal.toFixed(2)} ₽</span>
+      </div>
+    </div>`;
   });
 
   c.innerHTML = html;

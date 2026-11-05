@@ -19,21 +19,22 @@ import {
   getDocs 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ВСТАВЬТЕ СЮДА ВАШИ ДАННЫЕ ИЗ FIREBASE CONSOLE
+// Ваша конфигурация Firebase
 const firebaseConfig = {
-  apiKey: "ВАШ_API_KEY",
-  authDomain: "ВАШ_ПРОЕКТ.firebaseapp.com",
-  projectId: "ВАШ_ПРОЕКТ",
-  storageBucket: "ВАШ_ПРОЕКТ.appspot.com",
-  messagingSenderId: "ВАШ_SENDER_ID",
-  appId: "ВАШ_APP_ID"
+  apiKey: "AIzaSyBxatrNfOf_MHxBfPqg0yH94RqeklOhOdg",
+  authDomain: "meny-b583e.firebaseapp.com",
+  projectId: "meny-b583e",
+  storageBucket: "meny-b583e.firebasestorage.app",
+  messagingSenderId: "346734691668",
+  appId: "1:346734691668:web:b473329a2cb8ae694034c1",
+  measurementId: "G-07NXM3R3CT"
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Экспортируем всё необходимое для index.html
+// Экспортируем все необходимые функции
 export { 
   auth, 
   db, 

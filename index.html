@@ -1495,6 +1495,7 @@ window.addItemToMeal = (mealId, profileId) => {
   const meal = findMeal(mealId);
   if (!meal.userItems[profileId]) meal.userItems[profileId] = [];
   meal.userItems[profileId].push({ productId: product.id, grams });
+  meal.savedToShopping = false; // разрешим сохранить заново
   persist();
   renderMenu();
 };
@@ -1504,6 +1505,7 @@ window.removeItem = (mealId, profileId, idx) => {
   const meal = findMeal(mealId);
   if (meal.userItems && meal.userItems[profileId]) {
     meal.userItems[profileId].splice(idx, 1);
+    meal.savedToShopping = false;
     persist();
     renderMenu();
   }
@@ -1525,6 +1527,7 @@ window.editMenuItem = (mealId, profileId, idx) => {
     if (!isNaN(qty) && qty > 0) {
       if (p.unitType === 'pc' && p.gramPerPiece) item.grams = qty * p.gramPerPiece;
       else item.grams = qty;
+      meal.savedToShopping = false;
       persist();
       renderMenu();
     }
@@ -1580,8 +1583,8 @@ window.updateMealInputHint = (mealId, profileId) => {
   }
 };
 
-/* ============ NEW: СОХРАНЕНИЕ ПРОДУКТОВ ПРИЁМА ПИЩИ В СПИСОК ПОКУПОК ============ */
-window.saveMealToShoppingList = (mealId) => {
+/* ============ СОХРАНЕНИЕ ПРИЁМА ПИЩИ (покупки + остатки) ============ */
+window.saveMeal = (mealId) => {
   const meal = findMeal(mealId);
   if (!meal) return;
 
@@ -1599,19 +1602,24 @@ window.saveMealToShoppingList = (mealId) => {
     return;
   }
 
-  if (meal.savedToShopping && !confirm('Этот приём пищи уже сохранялся в список покупок. Добавить продукты повторно?')) {
+  if (meal.savedToShopping && !confirm('Этот приём пищи уже сохранялся. Сохранить повторно (добавит ещё раз в покупки и на остатки)?')) {
     return;
   }
 
-  let summary = 'Добавлено в список покупок:\n';
+  let summary = 'Сохранено (в покупки и на остатки):\n';
   ids.forEach(pid => {
     const product = products.find(x => String(x.id) === String(pid));
     if (!product) return;
     const grams = productGrams[pid];
-    const qtyToAdd = (product.unitType === 'pc' && product.gramPerPiece)
-      ? grams / product.gramPerPiece
-      : grams;
+    // Для штучных товаров нативное количество = штуки, для граммовых = граммы.
+    // Остатки хранятся в нативных единицах, поэтому добавляем одно и то же количество.
+    const qtyToAdd = (product.unitType === 'pc' && product.gramPerPiece > 0)
+      ? grams / product.gramPerPiece   // шт
+      : grams;                          // г
+
     product.qty = (parseFloat(product.qty) || 0) + qtyToAdd;
+    product.stock = (parseFloat(product.stock) || 0) + qtyToAdd;
+
     summary += `• ${product.name}: +${qtyToAdd.toFixed(2)} ${product.unitType === 'pc' ? 'шт' : 'г'}\n`;
   });
 
@@ -1619,58 +1627,59 @@ window.saveMealToShoppingList = (mealId) => {
   persist();
   renderShoppingList();
   renderProducts();
+  renderStock();
+  renderMenu();
   alert(summary);
 };
 
-/* ============ NEW: ЗАВЕРШЕНИЕ ДНЯ И СПИСАНИЕ СО СКЛАДА ============ */
-window.closeDay = (date) => {
-  const day = getDay(date);
+/* ============ АВТОСПИСАНИЕ СО СКЛАДА ПО ПРОШЕДШИМ ДНЯМ ============ */
+function autoDeductPastDays() {
+  const today = toISO(new Date());
+  let deducted = false;
 
-  if (day.closed) {
-    if (!confirm('День уже закрыт. Списать со склада повторно?')) return;
-  } else {
-    if (!confirm('Завершить день и списать использованные продукты со склада?')) return;
-  }
+  for (const date of Object.keys(days)) {
+    if (date >= today) continue;                       // не прошедший день
+    const day = days[date];
+    if (!day || !day.meals) continue;
+    if (day.deducted || day.closed) continue;          // уже списан
+    const hasItems = day.meals.some(m =>
+      m.userItems && Object.values(m.userItems).some(arr => arr.length > 0)
+    );
+    if (!hasItems) continue;
 
-  // Суммируем граммы по каждому продукту за день по всем профилям
-  const productGrams = {};
-  day.meals.forEach(meal => {
-    Object.values(meal.userItems || {}).forEach(items => {
-      items.forEach(it => {
-        productGrams[it.productId] = (productGrams[it.productId] || 0) + it.grams;
+    const productGrams = {};
+    day.meals.forEach(meal => {
+      Object.values(meal.userItems || {}).forEach(items => {
+        items.forEach(it => {
+          productGrams[it.productId] = (productGrams[it.productId] || 0) + it.grams;
+        });
       });
     });
-  });
 
-  const ids = Object.keys(productGrams);
-  if (ids.length === 0) {
-    alert('В этот день не запланировано ни одного продукта.');
-    return;
+    Object.entries(productGrams).forEach(([pid, grams]) => {
+      const product = products.find(x => String(x.id) === String(pid));
+      if (!product) return;
+      const qtyUsed = (product.unitType === 'pc' && product.gramPerPiece > 0)
+        ? grams / product.gramPerPiece
+        : grams;
+      product.stock = (parseFloat(product.stock) || 0) - qtyUsed;
+    });
+
+    day.deducted = true;
+    deducted = true;
   }
 
-  let summary = 'Списано со склада:\n';
-  ids.forEach(pid => {
-    const product = products.find(x => String(x.id) === String(pid));
-    if (!product) return;
-    const grams = productGrams[pid];
-    const qtyUsed = (product.unitType === 'pc' && product.gramPerPiece)
-      ? grams / product.gramPerPiece
-      : grams;
-    product.stock = (parseFloat(product.stock) || 0) - qtyUsed;
-    summary += `• ${product.name}: -${qtyUsed.toFixed(2)} ${product.unitType === 'pc' ? 'шт' : 'г'} (остаток: ${product.stock.toFixed(2)})\n`;
-  });
-
-  day.closed = true;
-  persist();
-  renderMenu();
-  renderStock();
-  renderProducts();
-  alert(summary);
-};
+  if (deducted) {
+    persist();
+    renderStock();
+    renderProducts();
+  }
+}
 
 /* ============ RENDER: DAILY MENU DASHBOARD ============ */
 window.changeDailyDate = (offset) => {
   dailyViewDate = addDays(dailyViewDate, offset);
+  autoDeductPastDays();
   renderDailyMenu();
 };
 
@@ -1719,15 +1728,11 @@ function renderDailyMenu() {
   });
   c.innerHTML = html;
 
-  // Кнопка «Завершить день» на дашборде
+  // Бейдж о том, что день учтён в остатках (без кнопки «Завершить день»)
   if (controls) {
-    const closedLabel = day.closed ? '<span class="day-closed-badge">День закрыт</span>' : '';
-    controls.innerHTML = `
-      ${closedLabel}
-      <button class="primary-btn" onclick="closeDay('${dailyViewDate}')" style="padding: 12px 24px; font-size: 1rem;">
-        ${day.closed ? '📉 Списать повторно' : '📉 Завершить день и списать со склада'}
-      </button>
-    `;
+    controls.innerHTML = (day.deducted || day.closed)
+      ? '<span class="day-closed-badge">📉 Учтено в остатках</span>'
+      : '';
   }
 }
 
@@ -1811,7 +1816,8 @@ function renderDayView(date) {
         </span>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <button class="small-btn" onclick="openAddRecipeToMeal('${id}')" style="background:#eaf2f8; border-color:#c8d6e5;">📖 Добавить с рецепта</button>
-          <button class="small-btn" onclick="saveMealToShoppingList('${id}')" style="background:#e8f5e9; border-color:#a5d6a7; color:#2e7d32;" title="Добавить продукты этого приёма пищи в список покупок">💾 Сохранить в покупки</button>
+          <button class="small-btn" onclick="saveMeal('${id}')" style="background:#e8f5e9; border-color:#a5d6a7; color:#2e7d32;" title="Сохранить продукты в покупки и на остатки">💾 Сохранить</button>
+          ${meal.savedToShopping ? '<span style="font-size:0.75rem; color:#2e7d32; font-weight:700;">✓ Сохранено</span>' : ''}
           <span class="meal-total">
             ${t.totalGrams.toFixed(0)} г · Б: ${t.totalProtein.toFixed(1)} г · Кл: ${t.totalFiber.toFixed(1)} г · ${t.totalKcal.toFixed(0)} ккал
           </span>
@@ -1894,12 +1900,9 @@ function renderDayView(date) {
     html += `</div></div>`;
   });
 
-  // Кнопка завершения дня
+  // Бейдж о том, что день учтён в остатках (без кнопки «Завершить день»)
   html += `<div class="day-controls">
-    ${day.closed ? '<span class="day-closed-badge">День закрыт</span>' : ''}
-    <button class="primary-btn" onclick="closeDay('${date}')" style="padding: 12px 24px; font-size: 1rem;">
-      ${day.closed ? '📉 Списать повторно' : '📉 Завершить день и списать со склада'}
-    </button>
+    ${(day.deducted || day.closed) ? '<span class="day-closed-badge">📉 Учтено в остатках</span>' : ''}
   </div>`;
 
   const tDay = calculateDayTotals(date);
@@ -1950,6 +1953,11 @@ function showSection() {
   menuWeek = current==='menu' && isDate(week) ? mondayOf(menuDay||week) : null;
   editingRecipes.clear();
 
+  // Автосписание со склада по прошедшим дням при входе в «Меню» / «Составить меню»
+  if (current === 'menu' || current === 'new') {
+    autoDeductPastDays();
+  }
+
   if (current === 'menu') renderMenu();
   else if (current === 'shopping') renderShoppingList();
   else if (current === 'stock') renderStock();
@@ -1979,7 +1987,8 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById('app').classList.remove('hidden');
     try {
       await loadUserData(user.uid);
-      await loadGlobalRecipes(); 
+      await loadGlobalRecipes();
+      autoDeductPastDays();   // списать прошедшие дни сразу после загрузки
     } catch (e) {
       console.error('Ошибка загрузки данных:', e);
     }

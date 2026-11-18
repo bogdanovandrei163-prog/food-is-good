@@ -314,20 +314,29 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         <label>Белок (г/100г)<input type="number" id="editProtein" step="0.1" min="0" value="0"></label>
         <label>Клетчатка (г/100г)<input type="number" id="editFiber" step="0.1" min="0" value="0"></label>
         <label>Ккал (на 100г)<input type="number" id="editKcal" step="1" min="0" value="0"></label>
-        <label>Единица количества
+        <label>Категория продукта
           <select id="editUnitType" onchange="updateUnitLabels()">
-            <option value="g">Граммы</option>
-            <option value="pc">Штуки</option>
+            <option value="pc">Штучный товар</option>
+            <option value="weight">Весовой товар</option>
           </select>
         </label>
-        <label><span id="qtyLabelText">Количество к покупке (г)</span>
-          <input type="number" id="editQty" step="0.01" min="0" value="0">
+        <label id="pcSubUnitLabel">Единица штучного товара
+          <select id="editPcSubUnit">
+            <option value="g">Граммы</option>
+            <option value="ml">Миллилитры</option>
+          </select>
         </label>
-        <label><span id="priceLabelText">Цена за 100г (₽)</span>
-          <input type="number" id="editPrice" step="0.01" min="0" value="0">
+        <label id="weightSubUnitLabel" class="hidden">Единица весового товара
+          <select id="editWeightSubUnit">
+            <option value="kg">Килограммы</option>
+            <option value="g">Граммы</option>
+          </select>
         </label>
-        <label id="gramPerPieceLabel" class="hidden">Граммовка 1 шт (г)
+        <label id="gramPerPieceLabel">Граммовка 1 шт (г/мл)
           <input type="number" id="editGramPerPiece" step="0.1" min="0" value="0">
+        </label>
+        <label><span id="priceLabelText">Цена за 1 шт (₽)</span>
+          <input type="number" id="editPrice" step="0.01" min="0" value="0">
         </label>
         <label>Фото продукта (необязательно)
           <input type="file" id="editImageFile" accept="image/*" style="padding:8px;">
@@ -477,6 +486,29 @@ function weekdayName(iso) { return WEEKDAYS[(fromISO(iso).getDay()+6)%7]; }
 function formatDate(iso) { const d = fromISO(iso); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; }
 function formatWeek(monday) { return `${formatDate(monday)} — ${formatDate(addDays(monday,6))}`; }
 
+/* ============ МИГРАЦИЯ СТАРЫХ ПРОДУКТОВ ============ */
+// Старый формат: unitType='g' (весовой), price=₽/100г, qty/stock в граммах.
+// Новый формат: unitType='weight', subUnit='kg'|'g', price=₽/кг (для weight), qty/stock в граммах.
+function migrateProduct(p) {
+  if (!p || typeof p !== 'object') return p;
+  if (p.unitType === 'g') {
+    return {
+      ...p,
+      unitType: 'weight',
+      subUnit: 'kg',
+      // ₽/100г → ₽/кг
+      price: (parseFloat(p.price) || 0) * 10,
+    };
+  }
+  if (p.unitType === 'pc' && !p.subUnit) {
+    return { ...p, subUnit: 'g' };
+  }
+  if (p.unitType === 'weight' && !p.subUnit) {
+    return { ...p, subUnit: 'kg' };
+  }
+  return p;
+}
+
 /* ============ СЖАТИЕ ИЗОБРАЖЕНИЙ ============ */
 function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -516,7 +548,7 @@ async function loadUserData(uid) {
     } else {
       profiles = [defaultProfile()];
     }
-    products = Array.isArray(d.products) ? d.products : [];
+    products = (Array.isArray(d.products) ? d.products : []).map(migrateProduct);
     days = (d.days && typeof d.days === 'object') ? d.days : {};
 
     if (profiles.length > 0) {
@@ -727,13 +759,19 @@ window.openProductModal = (id) => {
     document.getElementById('editProtein').value = p.protein || 0;
     document.getElementById('editFiber').value = p.fiber || 0;
     document.getElementById('editKcal').value = p.kcal || 0;
-    document.getElementById('editUnitType').value = p.unitType || 'g';
-    document.getElementById('editQty').value = p.qty || 0;
+    document.getElementById('editUnitType').value = p.unitType === 'pc' ? 'pc' : 'weight';
+    if (p.unitType === 'pc') {
+      document.getElementById('editPcSubUnit').value = p.subUnit || 'g';
+    } else {
+      document.getElementById('editWeightSubUnit').value = p.subUnit || 'kg';
+    }
     document.getElementById('editPrice').value = p.price || 0;
     document.getElementById('editGramPerPiece').value = p.gramPerPiece || 0;
   } else {
     document.getElementById('productModalTitle').textContent = 'Новый продукт';
-    document.getElementById('editUnitType').value = 'g';
+    document.getElementById('editUnitType').value = 'pc';
+    document.getElementById('editPcSubUnit').value = 'g';
+    document.getElementById('editWeightSubUnit').value = 'kg';
   }
   updateUnitLabels();
   modal.classList.remove('hidden');
@@ -743,9 +781,11 @@ window.closeProductModal = () => { document.getElementById('productModal').class
 
 window.updateUnitLabels = () => {
   const unit = document.getElementById('editUnitType').value;
-  document.getElementById('qtyLabelText').textContent = unit === 'pc' ? 'Количество к покупке (шт)' : 'Количество к покупке (г)';
-  document.getElementById('priceLabelText').textContent = unit === 'pc' ? 'Цена за 1 шт (₽)' : 'Цена за 100г (₽)';
-  document.getElementById('gramPerPieceLabel').classList.toggle('hidden', unit !== 'pc');
+  const isPc = unit === 'pc';
+  document.getElementById('pcSubUnitLabel').classList.toggle('hidden', !isPc);
+  document.getElementById('weightSubUnitLabel').classList.toggle('hidden', isPc);
+  document.getElementById('gramPerPieceLabel').classList.toggle('hidden', !isPc);
+  document.getElementById('priceLabelText').textContent = isPc ? 'Цена за 1 шт (₽)' : 'Цена за 1 кг (₽)';
 };
 
 window.handleProductSave = async (event) => {
@@ -767,6 +807,15 @@ window.handleProductSave = async (event) => {
     if (file) imageUrl = await compressImage(file);
 
     const unitType = document.getElementById('editUnitType').value;
+    const subUnit = unitType === 'pc'
+      ? document.getElementById('editPcSubUnit').value
+      : document.getElementById('editWeightSubUnit').value;
+
+    // qty больше не вводится в форме: при редактировании сохраняем старое, при создании = 0
+    const existing = id ? products.find(p => String(p.id) === String(id)) : null;
+    const preservedQty = existing ? (parseFloat(existing.qty) || 0) : 0;
+    const preservedStock = existing ? (parseFloat(existing.stock) || 0) : 0;
+
     const data = {
       name,
       store: document.getElementById('editStore').value.trim(),
@@ -774,17 +823,19 @@ window.handleProductSave = async (event) => {
       fiber: parseFloat(document.getElementById('editFiber').value) || 0,
       kcal: parseFloat(document.getElementById('editKcal').value) || 0,
       unitType,
-      qty: parseFloat(document.getElementById('editQty').value) || 0,
+      subUnit,
       price: parseFloat(document.getElementById('editPrice').value) || 0,
       gramPerPiece: unitType === 'pc' ? (parseFloat(document.getElementById('editGramPerPiece').value) || 0) : 0,
-      imageUrl: imageUrl
+      imageUrl: imageUrl,
+      qty: preservedQty,
+      stock: preservedStock,
     };
 
     if (id) {
       const idx = products.findIndex(p => String(p.id) === String(id));
       if (idx !== -1) products[idx] = { ...products[idx], ...data };
     } else {
-      products.push({ id: newId(), stock: 0, ...data });
+      products.push({ id: newId(), ...data });
     }
     
     await persist(); 
@@ -819,21 +870,31 @@ window.deleteProduct = (id) => {
   renderStock();
 };
 
+/* ============ ФОРМАТИРОВАНИЕ И РАСЧЁТЫ ============ */
+// Внутри: qty и stock — в нативных единицах (шт для pc, граммы для weight).
+// price: ₽/шт для pc, ₽/кг для weight.
 function productSubtotal(p) {
-  const q = p.qty || 0, pr = p.price || 0;
-  return p.unitType === 'pc' ? q * pr : (q/100) * pr;
+  const q = parseFloat(p.qty) || 0;
+  const pr = parseFloat(p.price) || 0;
+  if (p.unitType === 'pc') return q * pr;
+  // q в граммах, pr в ₽/кг
+  return (q / 1000) * pr;
 }
 function formatQty(p) {
-  const q = p.qty || 0;
-  return p.unitType === 'pc' ? `${q} шт` : `${q} г`;
+  const q = parseFloat(p.qty) || 0;
+  if (p.unitType === 'pc') return `${q.toFixed(2)} шт`;
+  if (p.subUnit === 'kg') return `${(q/1000).toFixed(2)} кг`;
+  return `${q.toFixed(1)} г`;
 }
 function formatPrice(p) {
-  const pr = (p.price || 0).toFixed(2);
-  return p.unitType === 'pc' ? `${pr} ₽/шт` : `${pr} ₽/100г`;
+  const pr = (parseFloat(p.price) || 0).toFixed(2);
+  return p.unitType === 'pc' ? `${pr} ₽/шт` : `${pr} ₽/кг`;
 }
 function formatStock(p) {
   const s = parseFloat(p.stock) || 0;
-  return p.unitType === 'pc' ? `${s.toFixed(2)} шт` : `${s.toFixed(1)} г`;
+  if (p.unitType === 'pc') return `${s.toFixed(2)} шт`;
+  if (p.subUnit === 'kg') return `${(s/1000).toFixed(2)} кг`;
+  return `${s.toFixed(1)} г`;
 }
 
 window.viewImage = (url) => {
@@ -923,23 +984,25 @@ function renderProducts() {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
     const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
     grandTotal += storeTotal;
+    // Убраны столбцы "Остаток" и "Кол-во"
     html += `<div class="store-group">
       <div class="store-header"><span>🏪 ${esc(store)}</span></div>
       <div class="store-body"><table>
         <thead><tr>
           <th>Название</th><th>Ккал/100г</th><th>Б/100г</th><th>Кл/100г</th>
-          <th>Остаток</th><th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th>
+          <th>Цена</th><th>Сумма</th><th></th>
         </tr></thead><tbody>`;
     items.forEach(p => {
       const subtotal = productSubtotal(p);
+      const unitHint = p.unitType === 'pc'
+        ? `1 шт = ${p.gramPerPiece || 0} ${p.subUnit === 'ml' ? 'мл' : 'г'}`
+        : (p.subUnit === 'kg' ? 'весовой (кг)' : 'весовой (г)');
       html += `<tr>
         <td>
           <strong>${esc(p.name)}</strong>
-          ${p.unitType === 'pc' && p.gramPerPiece ? `<div style="font-size:.75rem;color:#888">1 шт = ${p.gramPerPiece} г</div>` : ''}
+          <div style="font-size:.75rem;color:#888">${unitHint}</div>
         </td>
         <td>${p.kcal}</td><td>${p.protein}</td><td>${p.fiber}</td>
-        <td>${formatStock(p)}</td>
-        <td>${formatQty(p)}</td>
         <td>${formatPrice(p)}</td>
         <td><strong>${subtotal.toFixed(2)} ₽</strong></td>
         <td style="white-space:nowrap">
@@ -962,12 +1025,21 @@ window.editStock = (id) => {
   const p = products.find(x => String(x.id) === String(id));
   if (!p) return;
   const currentStock = parseFloat(p.stock) || 0;
-  let promptMsg = p.unitType === 'pc' ? `Введите новый остаток в штуках (текущий: ${currentStock} шт):` : `Введите новый остаток в граммах (текущий: ${currentStock} г):`;
-  let newVal = prompt(promptMsg, currentStock);
+  let promptMsg;
+  if (p.unitType === 'pc') {
+    promptMsg = `Введите новый остаток в штуках (текущий: ${currentStock} шт):`;
+  } else if (p.subUnit === 'kg') {
+    promptMsg = `Введите новый остаток в килограммах (текущий: ${(currentStock/1000).toFixed(3)} кг):`;
+  } else {
+    promptMsg = `Введите новый остаток в граммах (текущий: ${currentStock} г):`;
+  }
+  let newVal = prompt(promptMsg, p.unitType === 'pc' ? currentStock : (p.subUnit === 'kg' ? (currentStock/1000).toFixed(3) : currentStock));
   if (newVal !== null) {
     const val = parseFloat(newVal);
     if (!isNaN(val) && val >= 0) {
-      p.stock = val;
+      if (p.unitType === 'pc') p.stock = val;
+      else if (p.subUnit === 'kg') p.stock = val * 1000;
+      else p.stock = val;
       persist();
       renderStock();
       renderProducts();
@@ -1027,7 +1099,8 @@ window.updateShopUnitHint = () => {
   const p = products.find(x => String(x.id) === String(select.value));
   if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
   if (p.unitType === 'pc') { unit.textContent = 'шт'; qtyInput.placeholder = 'Штук'; }
-  else { unit.textContent = 'грамм'; qtyInput.placeholder = 'Грамм'; }
+  else if (p.subUnit === 'kg') { unit.textContent = 'кг'; qtyInput.placeholder = 'Килограмм'; }
+  else { unit.textContent = 'г'; qtyInput.placeholder = 'Грамм'; }
 };
 
 window.addToShoppingList = () => {
@@ -1039,7 +1112,12 @@ window.addToShoppingList = () => {
   if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
   const product = products.find(p => String(p.id) === String(productId));
   if (!product) return;
-  product.qty = (parseFloat(product.qty) || 0) + qty;
+  // Конвертация в нативную единицу (шт для pc, граммы для weight)
+  let qtyNative = qty;
+  if (product.unitType === 'weight' && product.subUnit === 'kg') {
+    qtyNative = qty * 1000;
+  }
+  product.qty = (parseFloat(product.qty) || 0) + qtyNative;
   persist();
   renderShoppingList();
   renderProducts(); 
@@ -1402,7 +1480,7 @@ window.closeSelectRecipeModal = () => {
   pendingMealId = null;
 };
 
-// ВАЖНО: применение рецепта к меню больше НЕ трогает склад и не проверяет остатки.
+// Применение рецепта — НЕ трогает склад и не проверяет остатки.
 window.applyRecipeToMeal = (recipeId) => {
   if (!pendingMealId) return;
   const recipe = recipes.find(r => String(r.id) === String(recipeId));
@@ -1475,7 +1553,6 @@ function calculateDayTotals(date, profileId = null) {
 }
 
 /* ============ MENU: ACTIONS ============ */
-// Добавление продукта в приём пищи — БЕЗ проверки и списания склада.
 window.addItemToMeal = (mealId, profileId) => {
   const select = document.getElementById(`select-${mealId}-${profileId}`);
   const qtyInput = document.getElementById(`qty-${mealId}-${profileId}`);
@@ -1495,12 +1572,11 @@ window.addItemToMeal = (mealId, profileId) => {
   const meal = findMeal(mealId);
   if (!meal.userItems[profileId]) meal.userItems[profileId] = [];
   meal.userItems[profileId].push({ productId: product.id, grams });
-  meal.savedToShopping = false; // разрешим сохранить заново
+  meal.savedToShopping = false;
   persist();
   renderMenu();
 };
 
-// Удаление продукта из приёма пищи — без возврата на склад.
 window.removeItem = (mealId, profileId, idx) => {
   const meal = findMeal(mealId);
   if (meal.userItems && meal.userItems[profileId]) {
@@ -1511,7 +1587,6 @@ window.removeItem = (mealId, profileId, idx) => {
   }
 };
 
-// Редактирование количества — без изменения склада.
 window.editMenuItem = (mealId, profileId, idx) => {
   const meal = findMeal(mealId);
   const item = meal.userItems[profileId][idx];
@@ -1575,7 +1650,7 @@ window.updateMealInputHint = (mealId, profileId) => {
   const p = products.find(x => String(x.id) === String(select.value));
   if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
   if (p.unitType === 'pc') {
-    unit.textContent = p.gramPerPiece ? `шт (= ${p.gramPerPiece} г/шт)` : 'шт';
+    unit.textContent = p.gramPerPiece ? `шт (= ${p.gramPerPiece} ${p.subUnit === 'ml' ? 'мл' : 'г'}/шт)` : 'шт';
     qtyInput.placeholder = 'Штук';
   } else {
     unit.textContent = 'грамм';
@@ -1588,7 +1663,6 @@ window.saveMeal = (mealId) => {
   const meal = findMeal(mealId);
   if (!meal) return;
 
-  // Суммируем граммы по каждому продукту среди всех профилей
   const productGrams = {};
   Object.values(meal.userItems || {}).forEach(items => {
     items.forEach(it => {
@@ -1611,8 +1685,7 @@ window.saveMeal = (mealId) => {
     const product = products.find(x => String(x.id) === String(pid));
     if (!product) return;
     const grams = productGrams[pid];
-    // Для штучных товаров нативное количество = штуки, для граммовых = граммы.
-    // Остатки хранятся в нативных единицах, поэтому добавляем одно и то же количество.
+    // Для штучных: qty/stock в штуках. Для весовых: qty/stock в граммах.
     const qtyToAdd = (product.unitType === 'pc' && product.gramPerPiece > 0)
       ? grams / product.gramPerPiece   // шт
       : grams;                          // г
@@ -1638,10 +1711,10 @@ function autoDeductPastDays() {
   let deducted = false;
 
   for (const date of Object.keys(days)) {
-    if (date >= today) continue;                       // не прошедший день
+    if (date >= today) continue;
     const day = days[date];
     if (!day || !day.meals) continue;
-    if (day.deducted || day.closed) continue;          // уже списан
+    if (day.deducted || day.closed) continue;
     const hasItems = day.meals.some(m =>
       m.userItems && Object.values(m.userItems).some(arr => arr.length > 0)
     );
@@ -1728,7 +1801,6 @@ function renderDailyMenu() {
   });
   c.innerHTML = html;
 
-  // Бейдж о том, что день учтён в остатках (без кнопки «Завершить день»)
   if (controls) {
     controls.innerHTML = (day.deducted || day.closed)
       ? '<span class="day-closed-badge">📉 Учтено в остатках</span>'
@@ -1900,7 +1972,6 @@ function renderDayView(date) {
     html += `</div></div>`;
   });
 
-  // Бейдж о том, что день учтён в остатках (без кнопки «Завершить день»)
   html += `<div class="day-controls">
     ${(day.deducted || day.closed) ? '<span class="day-closed-badge">📉 Учтено в остатках</span>' : ''}
   </div>`;
@@ -1953,7 +2024,6 @@ function showSection() {
   menuWeek = current==='menu' && isDate(week) ? mondayOf(menuDay||week) : null;
   editingRecipes.clear();
 
-  // Автосписание со склада по прошедшим дням при входе в «Меню» / «Составить меню»
   if (current === 'menu' || current === 'new') {
     autoDeductPastDays();
   }
@@ -1988,7 +2058,7 @@ onAuthStateChanged(auth, async (user) => {
     try {
       await loadUserData(user.uid);
       await loadGlobalRecipes();
-      autoDeductPastDays();   // списать прошедшие дни сразу после загрузки
+      autoDeductPastDays();
     } catch (e) {
       console.error('Ошибка загрузки данных:', e);
     }

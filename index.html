@@ -27,7 +27,6 @@ input,select,textarea{font-family:inherit}
 .auth-panel .primary-btn{padding:12px;font-size:1rem}
 .auth-error{color:var(--danger);font-size:.9rem;min-height:20px}
 
-/* --- HEADER & BURGER MENU --- */
 .app-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px}
 .header-left{display:flex;align-items:center;gap:15px}
 .app-header h1{text-align:left;margin:0;font-size:1.5rem}
@@ -70,7 +69,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .norm .label{font-size:.8rem;color:#555;text-transform:uppercase;letter-spacing:1px}
 .norm .value{font-size:1.6rem;font-weight:700}
 
-/* --- СТИЛИ ДЛЯ ДАШБОРДА МЕНЮ И РЕЦЕПТОВ --- */
 .daily-menu-grid, .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px; }
 .daily-meal-card, .recipe-card { background: #fff; border: 2px solid #c8d6e5; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; transition: border-color .2s, box-shadow .2s; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
 .daily-meal-card:hover, .recipe-card:hover { border-color: var(--accent); box-shadow: 0 4px 10px rgba(52,152,219,.15); }
@@ -80,13 +78,11 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .dm-dish { font-weight: 600; font-size: 1.05rem; color: var(--text); margin-bottom: 12px; line-height: 1.3; }
 .dm-footer { text-align: right; font-size: 0.9rem; color: #888; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
 
-/* --- БЛОКИ ПРОФИЛЕЙ В МЕНЮ --- */
 .profiles-meal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-top: 15px; }
 .profile-meal-section { background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
 .profile-meal-header { font-weight: 700; font-size: 0.95rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;}
 .profile-meal-header .stats { font-size: 0.8rem; color: #666; font-weight: normal; }
 
-/* --- СТИЛИ ДЛЯ ПРОДУКТОВ --- */
 .store-group{margin-bottom:18px}
 .store-header{display:flex;justify-content:space-between;align-items:center;background:#eaf2f8;padding:10px 14px;border-radius:10px 10px 0 0;font-weight:700;border:1px solid var(--border);border-bottom:none}
 .store-body{border:1px solid var(--border);border-radius:0;overflow-x:auto;border-bottom:none;}
@@ -94,7 +90,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .store-bottom-total{display:flex;justify-content:space-between;align-items:center;background:#f0f4f8;padding:12px 16px;border-radius:0 0 10px 10px;font-weight:700;font-size:1rem;border:1px solid var(--border);}
 .grand-total{display:flex;justify-content:space-between;align-items:center;background:#2c3e50;color:#fff;padding:16px 20px;border-radius:12px;font-size:1.15rem;font-weight:700;margin-top:20px}
 
-/* --- СТИЛИ ДЛЯ СПИСКА ПОКУПОК --- */
 .shopping-list { list-style: none; padding: 0; margin: 0; }
 .shopping-list li { display: flex; align-items: center; gap: 15px; padding: 12px 16px; border-bottom: 1px solid var(--border); background: #fff; transition: background 0.2s; }
 .shopping-list li:last-child { border-bottom: none; }
@@ -130,7 +125,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .meal-fields input[type="text"],.meal-fields textarea{padding:8px;border:1px solid var(--border);border-radius:6px;font-size:.95rem;font-family:inherit}
 .meal-fields textarea{min-height:110px;resize:vertical}
 
-/* --- ФОТО БЛЮДА --- */
 .meal-photo-row { display: flex; align-items: center; gap: 10px; margin-top: 5px; }
 .meal-img-preview { width: 80px; height: 80px; object-fit: cover; border-radius: 8px; border: 2px solid var(--border); cursor: pointer; transition: transform 0.2s; }
 .meal-img-preview:hover { transform: scale(1.05); border-color: var(--accent); }
@@ -151,13 +145,15 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .modal-content{background:var(--card-bg);border-radius:14px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
 
-/* --- НОВЫЕ СТИЛИ ДЛЯ МОДАЛЬНОГО ОКНА ДЕТАЛЕЙ БЛЮДА --- */
 .meal-details-content { display: flex; flex-direction: column; gap: 15px; }
 .meal-details-recipe { white-space: pre-wrap; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.95rem; }
 .meal-details-profile { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .meal-details-profile-header { background: #eaf2f8; padding: 10px 14px; font-weight: bold; color: var(--accent); }
 .meal-details-profile table { margin: 0; }
 .meal-details-profile td, .meal-details-profile th { padding: 8px 14px; }
+
+.day-controls { display:flex; gap:10px; align-items:center; justify-content:center; margin: 20px 0; flex-wrap: wrap; }
+.day-closed-badge { display:inline-block; background: var(--success); color:#fff; padding: 4px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
 
 @media(max-width:600px){body{padding:12px}.app-header h1{font-size:1.2rem}.user-info{font-size:.8rem;padding:6px 10px}}
 </style>
@@ -230,6 +226,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
           <button class="small-btn" onclick="changeDailyDate(1)">Следующий →</button>
         </div>
         <div id="dailyMenuContainer" class="daily-menu-grid"></div>
+        <div id="dailyDayControls" class="day-controls"></div>
       </div>
     </section>
 
@@ -256,8 +253,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <section class="section" id="section-shopping">
       <div class="card">
         <h2>🛍️ Список покупок</h2>
-        
-        <!-- Форма добавления в список покупок -->
         <div class="add-item-row" style="margin-bottom: 20px; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid var(--border);">
           <select id="shopSelectProduct" onchange="updateShopUnitHint()" style="flex:1; max-width:300px;">
             <option value="">-- Выберите продукт --</option>
@@ -266,7 +261,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
           <span id="shopUnit" style="font-size:0.9rem; color:#555; font-weight:600;"></span>
           <button class="primary-btn" onclick="addToShoppingList()">+ В список</button>
         </div>
-
         <div id="shoppingContainer"></div>
       </div>
     </section>
@@ -429,8 +423,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 <div id="selectRecipeModal" class="modal hidden">
   <div class="modal-content">
     <h3>Выберите рецепт для добавления</h3>
-    
-    <!-- Фильтры для модального окна -->
     <div id="modalRecipeFilters" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:15px;">
       <button class="small-btn primary" data-filter="all" onclick="setModalRecipeFilter('all')">Все</button>
       <button class="small-btn" data-filter="Завтрак" onclick="setModalRecipeFilter('Завтрак')">Завтрак</button>
@@ -439,10 +431,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
       <button class="small-btn" data-filter="Полдник" onclick="setModalRecipeFilter('Полдник')">Полдник</button>
       <button class="small-btn" data-filter="Ужин" onclick="setModalRecipeFilter('Ужин')">Ужин</button>
     </div>
-
-    <div id="selectRecipeList" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
-      <!-- filled by JS -->
-    </div>
+    <div id="selectRecipeList" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
     <div class="modal-actions">
       <button type="button" class="small-btn" onclick="closeSelectRecipeModal()">Отмена</button>
     </div>
@@ -499,20 +488,11 @@ function compressImage(file) {
         let width = img.width;
         let height = img.height;
         const maxSize = 600;
-
-        if (width > height && width > maxSize) {
-          height *= maxSize / width;
-          width = maxSize;
-        } else if (height > maxSize) {
-          width *= maxSize / height;
-          height = maxSize;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
+        if (width > height && width > maxSize) { height *= maxSize / width; width = maxSize; }
+        else if (height > maxSize) { width *= maxSize / height; height = maxSize; }
+        canvas.width = width; canvas.height = height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
-        
         resolve(canvas.toDataURL('image/jpeg', 0.7));
       };
       img.onerror = () => reject(new Error('Ошибка чтения изображения'));
@@ -594,16 +574,11 @@ window.handleLogin = async () => {
   const err = document.getElementById('loginError');
   err.textContent = '';
   if (!email || !password) { err.textContent = 'Введите email и пароль'; return; }
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-  } catch (e) {
-    if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
-      err.textContent = 'Неверный email или пароль';
-    } else if (e.code === 'auth/invalid-email') {
-      err.textContent = 'Некорректный email';
-    } else {
-      err.textContent = 'Ошибка входа: ' + e.message;
-    }
+  try { await signInWithEmailAndPassword(auth, email, password); }
+  catch (e) {
+    if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') err.textContent = 'Неверный email или пароль';
+    else if (e.code === 'auth/invalid-email') err.textContent = 'Некорректный email';
+    else err.textContent = 'Ошибка входа: ' + e.message;
   }
 };
 
@@ -614,18 +589,12 @@ window.handleRegister = async () => {
   err.textContent = '';
   if (!email || !password) { err.textContent = 'Введите email и пароль'; return; }
   if (password.length < 6) { err.textContent = 'Пароль должен быть не менее 6 символов'; return; }
-  try {
-    await createUserWithEmailAndPassword(auth, email, password);
-  } catch (e) {
-    if (e.code === 'auth/email-already-in-use') {
-      err.textContent = 'Этот email уже зарегистрирован';
-    } else if (e.code === 'auth/invalid-email') {
-      err.textContent = 'Некорректный email';
-    } else if (e.code === 'auth/weak-password') {
-      err.textContent = 'Слишком слабый пароль';
-    } else {
-      err.textContent = 'Ошибка регистрации: ' + e.message;
-    }
+  try { await createUserWithEmailAndPassword(auth, email, password); }
+  catch (e) {
+    if (e.code === 'auth/email-already-in-use') err.textContent = 'Этот email уже зарегистрирован';
+    else if (e.code === 'auth/invalid-email') err.textContent = 'Некорректный email';
+    else if (e.code === 'auth/weak-password') err.textContent = 'Слишком слабый пароль';
+    else err.textContent = 'Ошибка регистрации: ' + e.message;
   }
 };
 
@@ -657,10 +626,9 @@ window.saveProfile = (index) => {
   p.weight = document.getElementById(`profWeight_${index}`).value.trim();
   p.activity = document.getElementById(`profActivity_${index}`).value;
   p.goal = document.getElementById(`profGoal_${index}`).value;
-  
   persist();
   renderAboutSection();
-  renderMenu(); 
+  renderMenu();
 };
 
 window.deleteProfile = (index) => {
@@ -688,7 +656,6 @@ function calculateNorms(p) {
 function renderAboutSection() {
   const container = document.getElementById('profilesContainer');
   container.innerHTML = '';
-  
   profiles.forEach((p, index) => {
     const card1 = document.createElement('div');
     card1.className = 'card';
@@ -749,7 +716,6 @@ window.openProductModal = (id) => {
   document.getElementById('productForm').reset();
   document.getElementById('editProductId').value = '';
   document.getElementById('editProductImageUrl').value = '';
-  
   if (id) {
     const p = products.find(x => String(x.id) === String(id));
     if (!p) return;
@@ -784,7 +750,6 @@ window.updateUnitLabels = () => {
 
 window.handleProductSave = async (event) => {
   event.preventDefault();
-  
   const btn = event.target.querySelector('button[type="submit"]');
   const oldText = btn.textContent;
   btn.textContent = 'Сохранение...';
@@ -799,9 +764,7 @@ window.handleProductSave = async (event) => {
   const file = fileInput.files[0];
 
   try {
-    if (file) {
-      imageUrl = await compressImage(file);
-    }
+    if (file) imageUrl = await compressImage(file);
 
     const unitType = document.getElementById('editUnitType').value;
     const data = {
@@ -842,7 +805,6 @@ window.handleProductSave = async (event) => {
 window.deleteProduct = (id) => {
   if (!confirm('Удалить продукт из справочника? Он также исчезнет из меню и списка покупок.')) return;
   products = products.filter(p => String(p.id) !== String(id));
-  
   Object.values(days).forEach(day => (day.meals||[]).forEach(m => {
     if (m.userItems) {
       Object.keys(m.userItems).forEach(pid => {
@@ -850,7 +812,6 @@ window.deleteProduct = (id) => {
       });
     }
   }));
-
   persist();
   renderProducts();
   renderShoppingList(); 
@@ -888,32 +849,26 @@ window.closeImageModal = () => {
 window.openMealDetails = (date, mealId) => {
   const meal = getDay(date).meals.find(m => m.id === mealId);
   if (!meal) return;
-
   document.getElementById('detailsTitle').textContent = `${meal.name}: ${meal.dish || 'Без названия'}`;
   document.getElementById('detailsRecipe').textContent = meal.recipe || 'Рецепт не указан.';
-
   let itemsHtml = '';
   profiles.forEach(p => {
-      const pItems = meal.userItems[p.id] || [];
-      if (pItems.length === 0) return;
-
-      itemsHtml += `<div class="meal-details-profile" style="margin-bottom:10px;">
-          <div class="meal-details-profile-header">${esc(p.name || 'Без имени')}</div>
-          <table style="margin:0;">
-              <thead><tr><th>Продукт</th><th>Кол-во</th></tr></thead>
-              <tbody>`;
-      pItems.forEach(it => {
-          const prod = products.find(x => String(x.id) === String(it.productId));
-          if (prod) {
-              const qtyStr = prod.unitType === 'pc' && prod.gramPerPiece
-                ? `${(it.grams / prod.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
-                : `${it.grams.toFixed(0)} г`;
-              itemsHtml += `<tr><td>${esc(prod.name)}</td><td>${qtyStr}</td></tr>`;
-          }
-      });
-      itemsHtml += `</tbody></table></div>`;
+    const pItems = meal.userItems[p.id] || [];
+    if (pItems.length === 0) return;
+    itemsHtml += `<div class="meal-details-profile" style="margin-bottom:10px;">
+      <div class="meal-details-profile-header">${esc(p.name || 'Без имени')}</div>
+      <table style="margin:0;"><thead><tr><th>Продукт</th><th>Кол-во</th></tr></thead><tbody>`;
+    pItems.forEach(it => {
+      const prod = products.find(x => String(x.id) === String(it.productId));
+      if (prod) {
+        const qtyStr = prod.unitType === 'pc' && prod.gramPerPiece
+          ? `${(it.grams/prod.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
+          : `${it.grams.toFixed(0)} г`;
+        itemsHtml += `<tr><td>${esc(prod.name)}</td><td>${qtyStr}</td></tr>`;
+      }
+    });
+    itemsHtml += `</tbody></table></div>`;
   });
-  
   if (!itemsHtml) itemsHtml = '<div class="empty-msg">Нет продуктов</div>';
   document.getElementById('detailsUsers').innerHTML = itemsHtml;
   document.getElementById('mealDetailsModal').classList.remove('hidden');
@@ -924,37 +879,29 @@ window.closeMealDetails = () => document.getElementById('mealDetailsModal').clas
 window.openRecipeDetails = (recipeId) => {
   const r = recipes.find(x => String(x.id) === String(recipeId));
   if (!r) return;
-
   document.getElementById('detailsTitle').textContent = `${r.name} (${r.category || 'Рецепт'})`;
-  
   let recipeText = r.description || 'Описание не указано.';
-  if (r.authorEmail) {
-     recipeText += `\n\nАвтор: ${r.authorEmail.split('@')[0]}`;
-  }
+  if (r.authorEmail) recipeText += `\n\nАвтор: ${r.authorEmail.split('@')[0]}`;
   document.getElementById('detailsRecipe').textContent = recipeText;
 
   let itemsHtml = `<div class="meal-details-profile" style="margin-bottom:10px;">
-          <div class="meal-details-profile-header">Ингредиенты</div>
-          <table style="margin:0;">
-              <thead><tr><th>Продукт</th><th>Кол-во</th></tr></thead>
-              <tbody>`;
+    <div class="meal-details-profile-header">Ингредиенты</div>
+    <table style="margin:0;"><thead><tr><th>Продукт</th><th>Кол-во</th></tr></thead><tbody>`;
   if (r.items && r.items.length > 0) {
     r.items.forEach(it => {
-        const prod = products.find(x => String(x.id) === String(it.productId));
-        if (prod) {
-            const qtyStr = prod.unitType === 'pc' && prod.gramPerPiece
-              ? `${(it.grams / prod.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
-              : `${it.grams.toFixed(0)} г`;
-            itemsHtml += `<tr><td>${esc(prod.name)}</td><td>${qtyStr}</td></tr>`;
-        }
+      const prod = products.find(x => String(x.id) === String(it.productId));
+      if (prod) {
+        const qtyStr = prod.unitType === 'pc' && prod.gramPerPiece
+          ? `${(it.grams/prod.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
+          : `${it.grams.toFixed(0)} г`;
+        itemsHtml += `<tr><td>${esc(prod.name)}</td><td>${qtyStr}</td></tr>`;
+      }
     });
   } else {
     itemsHtml += `<tr><td colspan="2" style="color:#888;font-style:italic;text-align:center;">Нет ингредиентов</td></tr>`;
   }
   itemsHtml += `</tbody></table></div>`;
-  
   document.getElementById('detailsUsers').innerHTML = itemsHtml;
-  
   document.getElementById('mealDetailsModal').classList.remove('hidden');
 };
 
@@ -976,1166 +923,5 @@ function renderProducts() {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
     const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
     grandTotal += storeTotal;
-    
     html += `<div class="store-group">
-      <div class="store-header">
-        <span>🏪 ${esc(store)}</span>
-      </div>
-      <div class="store-body"><table>
-        <thead><tr>
-          <th>Название</th><th>Ккал/100г</th><th>Б/100г</th><th>Кл/100г</th>
-          <th>Остаток</th><th>Кол-во</th><th>Цена</th><th>Сумма</th><th></th>
-        </tr></thead><tbody>`;
-    items.forEach(p => {
-      const subtotal = productSubtotal(p);
-      html += `<tr>
-        <td>
-          <strong>${esc(p.name)}</strong>
-          ${p.unitType === 'pc' && p.gramPerPiece ? `<div style="font-size:.75rem;color:#888">1 шт = ${p.gramPerPiece} г</div>` : ''}
-        </td>
-        <td>${p.kcal}</td>
-        <td>${p.protein}</td>
-        <td>${p.fiber}</td>
-        <td>${formatStock(p)}</td>
-        <td>${formatQty(p)}</td>
-        <td>${formatPrice(p)}</td>
-        <td><strong>${subtotal.toFixed(2)} ₽</strong></td>
-        <td style="white-space:nowrap">
-          <button class="small-btn" onclick="openProductModal('${p.id}')" title="Редактировать">✏️</button>
-          ${p.imageUrl ? `<button class="small-btn" onclick="viewImage('${p.imageUrl}')" title="Посмотреть фото" style="background:#eaf2f8;border-color:#c8d6e5;margin:0 4px;">📷</button>` : ''}
-          <button class="delete-btn" onclick="deleteProduct('${p.id}')" title="Удалить">✕</button>
-        </td>
-      </tr>`;
-    });
-    html += `</tbody></table></div>
-      <div class="store-bottom-total">
-        <span>Итого по магазину</span>
-        <span>${storeTotal.toFixed(2)} ₽</span>
-      </div>
-    </div>`;
-  });
-  html += `<div class="grand-total"><span>💰 Итого по всем магазинам</span><span>${grandTotal.toFixed(2)} ₽</span></div>`;
-  c.innerHTML = html;
-}
-
-/* ============ STOCK RENDER ============ */
-window.editStock = (id) => {
-  const p = products.find(x => String(x.id) === String(id));
-  if (!p) return;
-  const currentStock = parseFloat(p.stock) || 0;
-  let promptMsg = p.unitType === 'pc' ? `Введите новый остаток в штуках (текущий: ${currentStock} шт):` : `Введите новый остаток в граммах (текущий: ${currentStock} г):`;
-  let newVal = prompt(promptMsg, currentStock);
-  if (newVal !== null) {
-      const val = parseFloat(newVal);
-      if (!isNaN(val) && val >= 0) {
-          p.stock = val;
-          persist();
-          renderStock();
-          renderProducts();
-          renderShoppingList();
-      }
-  }
-};
-
-window.clearStock = (id) => {
-    const p = products.find(x => String(x.id) === String(id));
-    if (p) {
-        if (!confirm(`Обнулить остаток продукта "${p.name}"?`)) return;
-        p.stock = 0;
-        persist();
-        renderStock();
-        renderProducts();
-    }
-};
-
-function renderStock() {
-  const c = document.getElementById('stockContainer');
-  if (!c) return;
-  
-  const itemsInStock = products.filter(p => (parseFloat(p.stock) || 0) > 0);
-
-  if (itemsInStock.length === 0) {
-    c.innerHTML = '<div class="empty-msg">Остатков пока нет. Отметьте купленные продукты в разделе «Список покупок».</div>';
-    return;
-  }
-
-  let html = `<table><thead><tr><th style="width: 60px;"></th><th>Название</th><th>Остаток</th><th style="width: 100px;">Действия</th></tr></thead><tbody>`;
-  itemsInStock.sort((a,b) => a.name.localeCompare(b.name, 'ru')).forEach(p => {
-    const stockVal = parseFloat(p.stock) || 0;
-    let displayGrams = 0;
-    
-    if (p.unitType === 'pc') {
-        displayGrams = stockVal * (parseFloat(p.gramPerPiece) || 0);
-    } else {
-        displayGrams = stockVal;
-    }
-    
-    const imgHtml = p.imageUrl 
-        ? `<img src="${p.imageUrl}" style="width: 44px; height: 44px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: pointer;" onclick="viewImage('${p.imageUrl}')">`
-        : `<div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f0f4f8; border-radius: 6px; border: 1px solid var(--border); color: #888; font-size: 1.2rem;">📦</div>`;
-
-    html += `<tr>
-      <td>${imgHtml}</td>
-      <td><strong>${esc(p.name)}</strong></td>
-      <td style="color: var(--success); font-weight: 600;">${displayGrams.toFixed(1)} г</td>
-      <td style="white-space:nowrap">
-        <button class="small-btn" onclick="editStock('${p.id}')" title="Редактировать остаток">✏️</button>
-        <button class="delete-btn" onclick="clearStock('${p.id}')" title="Обнулить остаток">✕</button>
-      </td>
-    </tr>`;
-  });
-  html += `</tbody></table>`;
-  c.innerHTML = html;
-}
-
-/* ============ SHOPPING LIST RENDER ============ */
-window.updateShopUnitHint = () => {
-  const select = document.getElementById('shopSelectProduct');
-  const unit = document.getElementById('shopUnit');
-  const qtyInput = document.getElementById('shopQty');
-  if (!select || !unit || !qtyInput) return;
-  
-  const p = products.find(x => String(x.id) === String(select.value));
-  if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
-  
-  if (p.unitType === 'pc') {
-    unit.textContent = 'шт';
-    qtyInput.placeholder = 'Штук';
-  } else {
-    unit.textContent = 'грамм';
-    qtyInput.placeholder = 'Грамм';
-  }
-};
-
-window.addToShoppingList = () => {
-  const select = document.getElementById('shopSelectProduct');
-  const qtyInput = document.getElementById('shopQty');
-  const productId = select.value;
-  const qty = parseFloat(qtyInput.value);
-
-  if (!productId) { alert('Выберите продукт'); return; }
-  if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
-
-  const product = products.find(p => String(p.id) === String(productId));
-  if (!product) return;
-
-  product.qty = qty;
-  persist();
-  renderShoppingList();
-  renderProducts(); 
-  
-  select.value = '';
-  qtyInput.value = '';
-  updateShopUnitHint();
-};
-
-window.checkoutProduct = (id) => {
-  const p = products.find(x => String(x.id) === String(id));
-  if (p) {
-    p.stock = (parseFloat(p.stock) || 0) + (parseFloat(p.qty) || 0);
-    p.qty = 0;
-    persist();
-    renderShoppingList();
-    renderProducts();
-    renderStock();
-  }
-};
-
-window.removeFromShoppingList = (id) => {
-  if (!confirm('Удалить товар из списка покупок?')) return;
-  const p = products.find(x => String(x.id) === String(id));
-  if (p) {
-    p.qty = 0;
-    persist();
-    renderShoppingList();
-    renderProducts();
-  }
-};
-
-function renderShoppingList() {
-  const c = document.getElementById('shoppingContainer');
-  const select = document.getElementById('shopSelectProduct');
-  
-  if (select) {
-     const currentVal = select.value;
-     select.innerHTML = '<option value="">-- Выберите продукт --</option>' + 
-        products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-     select.value = currentVal;
-  }
-
-  const toBuy = products.filter(p => (parseFloat(p.qty) || 0) > 0);
-
-  if (toBuy.length === 0) {
-    c.innerHTML = '<div class="empty-msg">Список покупок пуст. Добавьте продукты выше.</div>';
-    return;
-  }
-
-  const groups = {};
-  toBuy.forEach(p => {
-    const key = (p.store || '').trim() || '— Без магазина —';
-    (groups[key] ||= []).push(p);
-  });
-  const stores = Object.keys(groups).sort((a,b) => a.localeCompare(b,'ru'));
-  let html = '';
-
-  stores.forEach(store => {
-    const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
-    const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
-
-    html += `<div class="store-group">
-      <div class="store-header">
-        <span>🏪 ${esc(store)}</span>
-      </div>
-      <div class="store-body">
-        <ul class="shopping-list">`;
-
-    items.forEach(p => {
-      const qtyDisplay = formatQty(p);
-      const imgHtml = p.imageUrl 
-        ? `<img src="${p.imageUrl}" class="shopping-img" onclick="event.stopPropagation(); viewImage('${p.imageUrl}')" title="Посмотреть фото">`
-        : `<div class="shopping-img-placeholder">📦</div>`;
-
-      html += `<li>
-        ${imgHtml}
-        <div class="shopping-details">
-          <strong>${esc(p.name)}</strong>
-          <span class="shopping-qty">Купить: ${qtyDisplay}</span>
-        </div>
-        <label class="shopping-check" title="Отметить как купленное">
-          <input type="checkbox" onchange="checkoutProduct('${p.id}')">
-        </label>
-        <button class="delete-btn" style="padding: 4px 8px; margin-left: 5px;" onclick="removeFromShoppingList('${p.id}')" title="Удалить из списка">✕</button>
-      </li>`;
-    });
-
-    html += `</ul></div>
-      <div class="store-bottom-total">
-        <span>Итого по магазину</span>
-        <span>${storeTotal.toFixed(2)} ₽</span>
-      </div>
-    </div>`;
-  });
-
-  c.innerHTML = html;
-}
-
-/* ============ RECIPES LOGIC ============ */
-window.openRecipeModal = (id) => {
-  const modal = document.getElementById('recipeModal');
-  document.getElementById('recipeForm').reset();
-  document.getElementById('editRecipeId').value = '';
-  document.getElementById('editRecipeImageUrl').value = '';
-  document.getElementById('recipeImagePreviewContainer').classList.add('hidden');
-  document.getElementById('recipeImagePreview').src = '';
-  tempRecipeItems = [];
-
-  const sel = document.getElementById('recipeIngSelect');
-  sel.innerHTML = '<option value="">-- Выберите продукт --</option>' + 
-    products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-
-  if (id) {
-    const r = recipes.find(x => String(x.id) === String(id));
-    if (!r) return;
-    if (r.authorId !== auth.currentUser.uid) {
-      alert('Вы можете редактировать только свои рецепты');
-      return;
-    }
-    document.getElementById('recipeModalTitle').textContent = 'Редактировать рецепт';
-    document.getElementById('editRecipeId').value = r.id;
-    document.getElementById('editRecipeName').value = r.name;
-    document.getElementById('editRecipeCategory').value = r.category || 'Завтрак';
-    document.getElementById('editRecipeDesc').value = r.description || '';
-    tempRecipeItems = r.items.map(it => ({ ...it }));
-    
-    if (r.imageUrl) {
-      document.getElementById('editRecipeImageUrl').value = r.imageUrl;
-      document.getElementById('recipeImagePreview').src = r.imageUrl;
-      document.getElementById('recipeImagePreviewContainer').classList.remove('hidden');
-    }
-  } else {
-    document.getElementById('recipeModalTitle').textContent = 'Новый рецепт';
-    document.getElementById('editRecipeCategory').value = 'Завтрак';
-  }
-  
-  renderRecipeIngredientsList();
-  updateRecipeIngredientHint();
-  modal.classList.remove('hidden');
-};
-
-window.closeRecipeModal = () => {
-  document.getElementById('recipeModal').classList.add('hidden');
-  tempRecipeItems = [];
-};
-
-window.handleRecipeImageChange = async (file) => {
-  if (!file) return;
-  try {
-    const url = await compressImage(file);
-    document.getElementById('editRecipeImageUrl').value = url;
-    const img = document.getElementById('recipeImagePreview');
-    img.src = url;
-    document.getElementById('recipeImagePreviewContainer').classList.remove('hidden');
-  } catch (e) {
-    alert('Ошибка загрузки фото: ' + e.message);
-  }
-};
-
-function renderRecipeIngredientsList() {
-  const c = document.getElementById('recipeIngredientsList');
-  if (tempRecipeItems.length === 0) {
-    c.innerHTML = '<div class="empty-msg" style="padding:5px;">Нет ингредиентов</div>';
-    return;
-  }
-  let html = '<table style="margin:0;"><thead><tr><th>Продукт</th><th>Кол-во</th><th></th></tr></thead><tbody>';
-  tempRecipeItems.forEach((it, idx) => {
-    const p = products.find(x => String(x.id) === String(it.productId));
-    if (!p) return;
-    const qtyStr = p.unitType === 'pc' && p.gramPerPiece
-      ? `${(it.grams / p.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
-      : `${it.grams.toFixed(0)} г`;
-    html += `<tr>
-      <td>${esc(p.name)}</td>
-      <td>${qtyStr}</td>
-      <td><button type="button" class="delete-btn" style="padding:2px 6px; font-size:0.75rem;" onclick="removeRecipeIngredient(${idx})">✕</button></td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  c.innerHTML = html;
-}
-
-window.updateRecipeIngredientHint = () => {
-  const select = document.getElementById('recipeIngSelect');
-  const unit = document.getElementById('recipeIngUnit');
-  const qtyInput = document.getElementById('recipeIngQty');
-  const p = products.find(x => String(x.id) === String(select.value));
-  if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
-  if (p.unitType === 'pc') {
-    unit.textContent = p.gramPerPiece ? `шт (= ${p.gramPerPiece} г/шт)` : 'шт';
-    qtyInput.placeholder = 'Штук';
-  } else {
-    unit.textContent = 'грамм';
-    qtyInput.placeholder = 'Грамм';
-  }
-};
-
-window.addRecipeIngredient = () => {
-  const select = document.getElementById('recipeIngSelect');
-  const qtyInput = document.getElementById('recipeIngQty');
-  const productId = select.value;
-  const qty = parseFloat(qtyInput.value);
-  if (!productId) { alert('Выберите продукт'); return; }
-  if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
-  
-  const product = products.find(p => String(p.id) === String(productId));
-  if (!product) return;
-  
-  let grams;
-  if (product.unitType === 'pc') {
-    if (!product.gramPerPiece) { alert('У продукта не указана граммовка 1 шт. Отредактируйте продукт.'); return; }
-    grams = qty * product.gramPerPiece;
-  } else {
-    grams = qty;
-  }
-  
-  tempRecipeItems.push({ productId: product.id, grams });
-  renderRecipeIngredientsList();
-  select.value = '';
-  qtyInput.value = '';
-  updateRecipeIngredientHint();
-};
-
-window.removeRecipeIngredient = (idx) => {
-  tempRecipeItems.splice(idx, 1);
-  renderRecipeIngredientsList();
-};
-
-window.handleRecipeSave = async (event) => {
-  event.preventDefault();
-  const id = document.getElementById('editRecipeId').value;
-  const name = document.getElementById('editRecipeName').value.trim();
-  const category = document.getElementById('editRecipeCategory').value;
-  const description = document.getElementById('editRecipeDesc').value.trim();
-  const imageUrl = document.getElementById('editRecipeImageUrl').value;
-  
-  if (!name) { alert('Введите название рецепта'); return; }
-  
-  const data = {
-    name,
-    category,
-    description,
-    imageUrl,
-    authorId: auth.currentUser.uid,
-    authorEmail: auth.currentUser.email,
-    items: tempRecipeItems.map(it => ({ productId: it.productId, grams: it.grams }))
-  };
-  
-  try {
-    if (id) {
-      await updateDoc(doc(db, 'recipes', id), data);
-    } else {
-      await addDoc(collection(db, 'recipes'), data);
-    }
-    await loadGlobalRecipes();
-    closeRecipeModal();
-    renderRecipes();
-  } catch (e) {
-    console.error(e);
-    alert('Ошибка сохранения рецепта: ' + e.message);
-  }
-};
-
-window.deleteRecipe = async (id) => {
-  if (!confirm('Удалить этот рецепт?')) return;
-  try {
-    await deleteDoc(doc(db, 'recipes', id));
-    await loadGlobalRecipes();
-    renderRecipes();
-  } catch (e) {
-    console.error(e);
-    alert('Ошибка удаления рецепта: ' + e.message);
-  }
-};
-
-window.setRecipeFilter = (filter) => {
-  currentRecipeFilter = filter;
-  document.querySelectorAll('#recipeFilters button').forEach(btn => {
-    btn.classList.toggle('primary', btn.dataset.filter === filter);
-  });
-  renderRecipes();
-};
-
-function renderRecipes() {
-  const c = document.getElementById('recipesList');
-  
-  const filtered = recipes.filter(r => currentRecipeFilter === 'all' || r.category === currentRecipeFilter);
-
-  if (filtered.length === 0) {
-    c.innerHTML = '<div class="empty-msg" style="grid-column: 1 / -1;">В этой категории пока нет рецептов.</div>';
-    return;
-  }
-  
-  let html = '';
-  filtered.forEach(r => {
-    const isMyRecipe = r.authorId === auth.currentUser.uid;
-    let itemsHtml = '';
-    let totalKcal = 0;
-    let totalProtein = 0;
-    let totalFiber = 0;
-
-    r.items.forEach(it => {
-      const p = products.find(x => String(x.id) === String(it.productId));
-      if (!p) return;
-      const qtyStr = p.unitType === 'pc' && p.gramPerPiece
-        ? `${(it.grams / p.gramPerPiece).toFixed(2)} шт (${it.grams.toFixed(0)} г)`
-        : `${it.grams.toFixed(0)} г`;
-      itemsHtml += `<li>${esc(p.name)} — ${qtyStr}</li>`;
-
-      const factor = it.grams / 100;
-      totalKcal += (p.kcal || 0) * factor;
-      totalProtein += (p.protein || 0) * factor;
-      totalFiber += (p.fiber || 0) * factor;
-    });
-    
-    html += `<div class="daily-meal-card" onclick="openRecipeDetails('${r.id}')" style="cursor: pointer;">
-      <div class="dm-header" style="display:flex; justify-content:space-between;">
-        <span>${esc(r.category || 'Рецепт')}</span>
-        <span style="font-size:0.75rem; font-weight:normal; color:#888; max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${esc(r.authorEmail)}">Автор: ${esc(r.authorEmail ? r.authorEmail.split('@')[0] : 'Неизвестен')}</span>
-      </div>
-      
-      ${r.imageUrl ? `<img src="${r.imageUrl}" class="dm-image" onclick="event.stopPropagation(); viewImage('${r.imageUrl}')" title="Посмотреть фото">` : ''}
-      
-      <div class="dm-body">
-        <div class="dm-dish">${esc(r.name)}</div>
-        
-        <div style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-top: 10px;">
-          <strong style="font-size:0.85rem; display:block; margin-bottom:5px;">Ингредиенты:</strong>
-          <ul style="margin:0; padding-left:20px; font-size:0.85rem; color:#444;">
-            ${itemsHtml || '<li style="list-style:none;color:#999;padding-left:0;">Нет ингредиентов</li>'}
-          </ul>
-        </div>
-
-        <div style="font-size:0.85rem; margin-top:10px; border-top:1px dashed #eee; padding-top:8px; display:flex; justify-content:space-between; color:var(--accent); font-weight: 600;">
-           <span>Итого:</span>
-           <span>Б: ${totalProtein.toFixed(1)}г · Кл: ${totalFiber.toFixed(1)}г · ${totalKcal.toFixed(0)} ккал</span>
-        </div>
-      </div>
-      
-      <div class="dm-footer" style="margin-top:15px; display:flex; justify-content:flex-end; gap:5px;" onclick="event.stopPropagation()">
-        ${isMyRecipe ? `<button class="small-btn" onclick="openRecipeModal('${r.id}')" title="Редактировать">✏️ Редактировать</button>` : ''}
-        ${isMyRecipe ? `<button class="delete-btn" onclick="deleteRecipe('${r.id}')" title="Удалить">✕</button>` : ''}
-      </div>
-    </div>`;
-  });
-  c.innerHTML = html;
-}
-
-/* ============ ДОБАВЛЕНИЕ РЕЦЕПТА В МЕНЮ ============ */
-window.openAddRecipeToMeal = (mealId) => {
-  pendingMealId = mealId;
-  modalRecipeFilter = 'all';
-  document.getElementById('selectRecipeModal').classList.remove('hidden');
-  updateModalRecipeFiltersUI();
-  renderModalRecipes();
-};
-
-window.setModalRecipeFilter = (filter) => {
-  modalRecipeFilter = filter;
-  updateModalRecipeFiltersUI();
-  renderModalRecipes();
-};
-
-window.updateModalRecipeFiltersUI = () => {
-  document.querySelectorAll('#modalRecipeFilters button').forEach(btn => {
-    btn.classList.toggle('primary', btn.dataset.filter === modalRecipeFilter);
-  });
-};
-
-window.renderModalRecipes = () => {
-  const list = document.getElementById('selectRecipeList');
-  
-  if (recipes.length === 0) {
-    list.innerHTML = '<div class="empty-msg">Нет сохранённых рецептов. Сначала создайте рецепт в разделе «Рецепты».</div>';
-    return;
-  }
-
-  const filtered = recipes.filter(r => modalRecipeFilter === 'all' || r.category === modalRecipeFilter);
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-msg">В этой категории пока нет рецептов.</div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(r => {
-    let cardStyle = 'background-color: #fff;';
-    if (r.imageUrl) {
-      cardStyle = `background-image: linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.85)), url('${r.imageUrl}'); background-size: cover; background-position: center;`;
-    }
-    
-    return `
-      <div class="card" style="margin-bottom:0; cursor:pointer; padding:15px; border-radius:10px; border: 1px solid var(--border); position: relative; overflow: hidden; ${cardStyle} transition: transform 0.2s;" 
-           onclick="applyRecipeToMeal('${r.id}')" 
-           onmouseover="this.style.transform='scale(1.02)'" 
-           onmouseout="this.style.transform='scale(1)'">
-        <div style="position: relative; z-index: 1;">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <strong style="color: #000; font-size: 1.1rem;">${esc(r.name)}</strong>
-            <span style="font-size:0.75rem; background:#eaf2f8; padding:2px 6px; border-radius:4px; color:var(--accent); font-weight:600;">${esc(r.category || 'Без категории')}</span>
-          </div>
-          ${r.description ? `<div style="font-size:0.85rem; color:#333; margin-top:5px;">${esc(r.description)}</div>` : ''}
-          ${r.items && r.items.length ? `<div style="font-size:0.8rem; color:#555; margin-top:8px; font-weight:600;">Ингредиентов: ${r.items.length}</div>` : ''}
-        </div>
-      </div>
-    `;
-  }).join('');
-};
-
-window.closeSelectRecipeModal = () => {
-  document.getElementById('selectRecipeModal').classList.add('hidden');
-  pendingMealId = null;
-};
-
-window.applyRecipeToMeal = (recipeId) => {
-  if (!pendingMealId) return;
-  const recipe = recipes.find(r => String(r.id) === String(recipeId));
-  if (!recipe) return;
-  const meal = findMeal(pendingMealId);
-  if (!meal) return;
-  
-  // Проверка остатков для всех профилей
-  let stockError = false;
-  recipe.items.forEach(it => {
-      const prod = products.find(x => String(x.id) === String(it.productId));
-      if (prod) {
-          let qtyToDeduct = prod.unitType === 'pc' && prod.gramPerPiece ? (it.grams / prod.gramPerPiece) : it.grams;
-          qtyToDeduct *= profiles.length; // На всех пользователей
-          if ((parseFloat(prod.stock) || 0) < qtyToDeduct) stockError = true;
-      }
-  });
-  
-  if (stockError) {
-      if (!confirm('Внимание! На складе может не хватить некоторых продуктов для добавления этого рецепта всем пользователям. Продолжить?')) return;
-  }
-  
-  // Списание остатков
-  recipe.items.forEach(it => {
-      const prod = products.find(x => String(x.id) === String(it.productId));
-      if (prod) {
-          let qtyToDeduct = prod.unitType === 'pc' && prod.gramPerPiece ? (it.grams / prod.gramPerPiece) : it.grams;
-          prod.stock = (parseFloat(prod.stock) || 0) - (qtyToDeduct * profiles.length);
-      }
-  });
-
-  profiles.forEach(p => {
-    if (!meal.userItems[p.id]) meal.userItems[p.id] = [];
-    recipe.items.forEach(it => {
-      const prod = products.find(x => String(x.id) === String(it.productId));
-      if (prod) {
-        meal.userItems[p.id].push({ productId: it.productId, grams: it.grams });
-      }
-    });
-  });
-  
-  if (!meal.dish) {
-    meal.dish = recipe.name;
-  }
-  
-  if (recipe.description) {
-    meal.recipe = recipe.description;
-  }
-  
-  if (recipe.imageUrl) {
-    meal.imageUrl = recipe.imageUrl;
-  }
-  
-  persist();
-  renderMenu();
-  renderStock();
-  closeSelectRecipeModal();
-};
-
-/* ============ MENU: DATA ============ */
-function defaultMeals() {
-  return [['Завтрак','08:00'],['Перекус','11:00'],['Обед','14:00'],['Полдник','17:00'],['Ужин','19:00']]
-    .map(([name,time]) => ({ id: newId(), name, time, dish:'', recipe:'', userItems:{}, imageUrl:'' }));
-}
-function getDay(date) {
-  if (!days[date]) days[date] = { meals: defaultMeals() };
-  return days[date];
-}
-function findMeal(id) { return getDay(menuDay).meals.find(m => m.id === id); }
-function sortedMeals(day) { return [...day.meals].sort((a,b) => (a.time||'').localeCompare(b.time||'')); }
-function isPlanned(m) { 
-  const hasItems = m.userItems && Object.values(m.userItems).some(arr => arr.length > 0);
-  return m.dish || m.recipe || hasItems; 
-}
-
-function calculateMealTotals(meal, profileId = null) {
-  let g=0,pr=0,fi=0,kc=0;
-  if (!meal.userItems) return { totalGrams:g, totalProtein:pr, totalFiber:fi, totalKcal:kc };
-  
-  let itemsToCalc = [];
-  if (profileId) {
-      itemsToCalc = meal.userItems[profileId] || [];
-  } else {
-      profiles.forEach(p => {
-          if (meal.userItems[p.id]) {
-              itemsToCalc = itemsToCalc.concat(meal.userItems[p.id]);
-          }
-      });
-  }
-
-  itemsToCalc.forEach(it => {
-    const p = products.find(x => String(x.id) === String(it.productId));
-    if (!p) return;
-    const f = it.grams / 100;
-    g += it.grams; pr += p.protein*f; fi += p.fiber*f; kc += p.kcal*f;
-  });
-  return { totalGrams:g, totalProtein:pr, totalFiber:fi, totalKcal:kc };
-}
-
-function calculateDayTotals(date, profileId = null) {
-  const t = { totalGrams:0, totalProtein:0, totalFiber:0, totalKcal:0 };
-  (days[date]?.meals || []).forEach(m => {
-    const mt = calculateMealTotals(m, profileId);
-    Object.keys(t).forEach(k => t[k] += mt[k]);
-  });
-  return t;
-}
-
-/* ============ MENU: ACTIONS ============ */
-window.addItemToMeal = (mealId, profileId) => {
-  const select = document.getElementById(`select-${mealId}-${profileId}`);
-  const qtyInput = document.getElementById(`qty-${mealId}-${profileId}`);
-  const productId = select.value;
-  const qty = parseFloat(qtyInput.value);
-  if (!productId) { alert('Выберите продукт'); return; }
-  if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
-  const product = products.find(p => String(p.id) === String(productId));
-  if (!product) return;
-  
-  let grams;
-  if (product.unitType === 'pc') {
-    if (!product.gramPerPiece) { alert('У продукта не указана граммовка 1 шт. Отредактируйте продукт.'); return; }
-    grams = qty * product.gramPerPiece;
-  } else {
-    grams = qty;
-  }
-  
-  // Проверка остатка
-  const currentStock = parseFloat(product.stock) || 0;
-  if (currentStock < qty) { 
-      alert(`Недостаточно продукта "${product.name}" на складе! В наличии: ${currentStock} ${product.unitType === 'pc' ? 'шт' : 'г'}`); 
-      return; 
-  }
-  product.stock = currentStock - qty;
-
-  const meal = findMeal(mealId);
-  if (!meal.userItems[profileId]) meal.userItems[profileId] = [];
-  meal.userItems[profileId].push({ productId: product.id, grams });
-  persist();
-  renderMenu();
-  renderStock();
-};
-
-window.removeItem = (mealId, profileId, idx) => {
-  const meal = findMeal(mealId);
-  if (meal.userItems && meal.userItems[profileId]) {
-    const item = meal.userItems[profileId][idx];
-    const p = products.find(x => String(x.id) === String(item.productId));
-    if (p) {
-      let qtyToReturn = p.unitType === 'pc' && p.gramPerPiece ? (item.grams / p.gramPerPiece) : item.grams;
-      p.stock = (parseFloat(p.stock) || 0) + qtyToReturn;
-    }
-    meal.userItems[profileId].splice(idx, 1);
-    persist();
-    renderMenu();
-    renderStock();
-  }
-};
-
-window.editMenuItem = (mealId, profileId, idx) => {
-  const meal = findMeal(mealId);
-  const item = meal.userItems[profileId][idx];
-  if (!item) return;
-  const p = products.find(x => String(x.id) === String(item.productId));
-  if (!p) return;
-
-  let oldQty = p.unitType === 'pc' && p.gramPerPiece ? (item.grams / p.gramPerPiece) : item.grams;
-  let newVal;
-  
-  if (p.unitType === 'pc' && p.gramPerPiece) {
-    newVal = prompt(`Введите количество в штуках (1 шт = ${p.gramPerPiece} г):`, oldQty.toFixed(2));
-  } else {
-    newVal = prompt(`Введите количество в граммах:`, item.grams.toFixed(0));
-  }
-  
-  if (newVal !== null) {
-    const qty = parseFloat(newVal);
-    if (!isNaN(qty) && qty > 0) {
-      const diff = qty - oldQty;
-      const currentStock = parseFloat(p.stock) || 0;
-      
-      if (diff > 0 && currentStock < diff) {
-        alert(`Недостаточно продукта на складе! В наличии: ${currentStock}`);
-        return;
-      }
-      
-      p.stock = currentStock - diff;
-      
-      if (p.unitType === 'pc' && p.gramPerPiece) {
-        item.grams = qty * p.gramPerPiece;
-      } else {
-        item.grams = qty;
-      }
-      persist();
-      renderMenu();
-      renderStock();
-    }
-  }
-};
-
-window.updateMeal = (mealId, field, value, rerender) => {
-  findMeal(mealId)[field] = value;
-  persist();
-  if (rerender) renderMenu();
-};
-
-window.handleMealImageUpload = async (mealId, file) => {
-  if (!file) return;
-  try {
-    const imageUrl = await compressImage(file);
-    findMeal(mealId).imageUrl = imageUrl;
-    await persist();
-    renderMenu(); 
-  } catch (e) {
-    alert('Ошибка при загрузке фото блюда: ' + e.message);
-  }
-};
-
-window.editRecipe = (id) => {
-  editingRecipes.add(id); renderMenu();
-  const el = document.getElementById(`recipe-${id}`);
-  if (el) el.focus();
-};
-
-window.saveRecipe = (id) => {
-  findMeal(id).recipe = document.getElementById(`recipe-${id}`).value.trim();
-  editingRecipes.delete(id); persist(); renderMenu();
-};
-
-window.cancelRecipe = (id) => { editingRecipes.delete(id); renderMenu(); };
-
-window.goToWeek = (v) => { if (v) location.hash = `menu/${mondayOf(v)}`; };
-
-window.updateMealInputHint = (mealId, profileId) => {
-  const select = document.getElementById(`select-${mealId}-${profileId}`);
-  const unit = document.getElementById(`unit-${mealId}-${profileId}`);
-  const qtyInput = document.getElementById(`qty-${mealId}-${profileId}`);
-  if (!select || !unit || !qtyInput) return;
-  const p = products.find(x => String(x.id) === String(select.value));
-  if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
-  if (p.unitType === 'pc') {
-    unit.textContent = p.gramPerPiece ? `шт (= ${p.gramPerPiece} г/шт)` : 'шт';
-    qtyInput.placeholder = 'Штук';
-  } else {
-    unit.textContent = 'грамм';
-    qtyInput.placeholder = 'Грамм';
-  }
-};
-
-/* ============ RENDER: DAILY MENU DASHBOARD ============ */
-window.changeDailyDate = (offset) => {
-  dailyViewDate = addDays(dailyViewDate, offset);
-  renderDailyMenu();
-};
-
-function renderDailyMenu() {
-  const c = document.getElementById('dailyMenuContainer');
-  const title = document.getElementById('dailyMenuTitle');
-  if (!c || !title) return;
-
-  const today = toISO(new Date());
-  if (dailyViewDate === today) {
-    title.textContent = 'Меню на сегодня';
-  } else {
-    title.textContent = `Меню на ${formatDate(dailyViewDate)} (${weekdayName(dailyViewDate)})`;
-  }
-
-  const day = getDay(dailyViewDate);
-  
-  let html = '';
-  sortedMeals(day).forEach(meal => {
-    const dishName = meal.dish ? esc(meal.dish) : '<span style="color:#aaa;font-weight:400;font-style:italic">Блюдо не выбрано</span>';
-    
-    const imgHtml = meal.imageUrl 
-      ? `<img src="${meal.imageUrl}" class="dm-image" onclick="event.stopPropagation(); viewImage('${meal.imageUrl}')" title="Посмотреть фото блюда">` 
-      : '';
-
-    let profileStatsHtml = '';
-    profiles.forEach(p => {
-        const pt = calculateMealTotals(meal, p.id);
-        if (pt.totalGrams > 0) {
-            profileStatsHtml += `
-               <div style="font-size:0.85rem; margin-top:8px; border-top:1px dashed #eee; padding-top:8px;">
-                 <div style="font-weight:600; color:#2c3e50; margin-bottom:2px;">Для ${esc(p.name || 'Без имени')}:</div>
-                 <div style="display:flex; justify-content:space-between; color:#555;">
-                    <span>Вес: ${pt.totalGrams.toFixed(0)}г</span>
-                    <span>Б: ${pt.totalProtein.toFixed(1)}г</span>
-                    <span>Кл: ${pt.totalFiber.toFixed(1)}г</span>
-                    <span>Ккал: ${pt.totalKcal.toFixed(0)}</span>
-                 </div>
-               </div>
-            `;
-        }
-    });
-
-    html += `<div class="daily-meal-card" onclick="openMealDetails('${dailyViewDate}', '${meal.id}')">
-      <div class="dm-header">${esc(meal.name)}</div>
-      ${imgHtml}
-      <div class="dm-body">
-        <div class="dm-dish">${dishName}</div>
-        ${profileStatsHtml || '<div style="font-size:0.85rem; color:#aaa; font-style:italic;">Нет данных по продуктам</div>'}
-      </div>
-      <div class="dm-footer">Время: ${esc(meal.time)}</div>
-    </div>`;
-  });
-  
-  c.innerHTML = html;
-}
-
-/* ============ MENU: RENDER ============ */
-function renderMenu() {
-  const c = document.getElementById('menuContainer');
-  if (menuDay) c.innerHTML = renderDayView(menuDay);
-  else if (menuWeek) c.innerHTML = renderWeekView(menuWeek);
-  else c.innerHTML = renderWeeksList();
-  
-  renderDailyMenu();
-}
-
-function renderWeeksList() {
-  const currentWeek = mondayOf(toISO(new Date()));
-  const weeks = new Set([currentWeek, addDays(currentWeek,7), addDays(currentWeek,14), addDays(currentWeek,21)]);
-  Object.keys(days).forEach(d => { if ((days[d].meals||[]).some(isPlanned)) weeks.add(mondayOf(d)); });
-  let html = `<h2>Меню по неделям</h2>
-    <div class="week-toolbar"><span>Перейти к неделе с датой:</span>
-    <input type="date" onchange="goToWeek(this.value)"></div>
-    <div class="tile-grid">`;
-  [...weeks].sort().forEach(monday => {
-    let planned = 0, kcal = 0;
-    for (let i=0;i<7;i++) {
-      const d = addDays(monday,i);
-      if ((days[d]?.meals||[]).some(isPlanned)) planned++;
-      kcal += calculateDayTotals(d).totalKcal;
-    }
-    html += `<a class="tile ${monday===currentWeek?'current':''}" href="#menu/${monday}">
-      <div class="tile-title">${formatWeek(monday)}${monday===currentWeek?'<span class="tile-badge">сейчас</span>':''}</div>
-      <div class="tile-sub">Запланировано дней: ${planned} из 7</div>
-      ${planned?`<div class="tile-sub">В среднем ${(kcal/planned).toFixed(0)} ккал в день</div>`:''}
-    </a>`;
-  });
-  return html + `</div>`;
-}
-
-function renderWeekView(monday) {
-  const today = toISO(new Date());
-  let html = `<div class="breadcrumbs"><a href="#menu">Меню</a> › Неделя ${formatWeek(monday)}</div>
-    <div class="week-toolbar">
-      <a class="small-btn" href="#menu/${addDays(monday,-7)}" style="text-decoration:none">← Предыдущая</a>
-      <a class="small-btn" href="#menu/${addDays(monday,7)}" style="text-decoration:none">Следующая →</a>
-    </div>
-    <h2>Неделя ${formatWeek(monday)}</h2>
-    <div class="tile-grid">`;
-  for (let i=0;i<7;i++) {
-    const d = addDays(monday,i);
-    const day = days[d];
-    const planned = day ? sortedMeals(day).filter(isPlanned) : [];
-    const kcal = calculateDayTotals(d).totalKcal;
-    html += `<a class="tile ${d===today?'current':''}" href="#menu/${monday}/${d}">
-      <div class="tile-title">${WEEKDAYS[i]}${d===today?'<span class="tile-badge">сегодня</span>':''}</div>
-      <div class="tile-sub">${formatDate(d)}${kcal?` · ${kcal.toFixed(0)} ккал`:''}</div>
-      ${planned.length
-        ? `<ul class="tile-meals">${planned.map(m=>`<li><span class="time">${esc(m.time)}</span>${esc(m.dish||m.name)}</li>`).join('')}</ul>`
-        : `<div class="tile-sub" style="margin-top:8px;font-style:italic">Ничего не запланировано</div>`}
-    </a>`;
-  }
-  return html + `</div>`;
-}
-
-function renderDayView(date) {
-  const monday = mondayOf(date);
-  const day = getDay(date);
-  let html = `<div class="breadcrumbs">
-    <a href="#menu">Меню</a> › <a href="#menu/${monday}">Неделя ${formatWeek(monday)}</a> › ${weekdayName(date)}, ${formatDate(date)}
-    </div>
-    <div class="week-toolbar">
-      <a class="small-btn" href="#menu/${mondayOf(addDays(date,-1))}/${addDays(date,-1)}" style="text-decoration:none">← Предыдущий день</a>
-      <a class="small-btn" href="#menu/${mondayOf(addDays(date,1))}/${addDays(date,1)}" style="text-decoration:none">Следующий день →</a>
-    </div>
-    <h2>${weekdayName(date)}, ${formatDate(date)}</h2>`;
-
-  sortedMeals(day).forEach(meal => {
-    const t = calculateMealTotals(meal); // Общий итог
-    const id = meal.id;
-    html += `<div class="meal-card">
-      <div class="meal-header">
-        <span>${esc(meal.name)}
-          <input type="time" value="${esc(meal.time)}" onchange="updateMeal('${id}','time',this.value,true)">
-        </span>
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <button class="small-btn" onclick="openAddRecipeToMeal('${id}')" style="background:#eaf2f8; border-color:#c8d6e5;">📖 Добавить с рецепта</button>
-          <span class="meal-total">
-            ${t.totalGrams.toFixed(0)} г · Б: ${t.totalProtein.toFixed(1)} г · Кл: ${t.totalFiber.toFixed(1)} г · ${t.totalKcal.toFixed(0)} ккал
-          </span>
-        </div>
-      </div>
-      <div class="meal-fields">
-        <label>Название блюда
-          <input type="text" value="${esc(meal.dish)}" placeholder="Например: Омлет с овощами"
-            onchange="updateMeal('${id}','dish',this.value.trim(), true)">
-        </label>
-        <div>
-          <label>Рецепт / план действий</label>`;
-    if (editingRecipes.has(id)) {
-      html += `<div style="margin-top:4px">
-        <textarea id="recipe-${id}" placeholder="1. Нарезать овощи&#10;2. Взбить яйца&#10;3. Жарить 5 минут">${esc(meal.recipe)}</textarea>
-      </div>
-      <div class="recipe-actions">
-        <button class="small-btn primary" onclick="saveRecipe('${id}')">Сохранить</button>
-        <button class="small-btn" onclick="cancelRecipe('${id}')">Отмена</button>
-      </div>`;
-    } else if (meal.recipe) {
-      html += `<div class="recipe-text" style="margin-top:4px">${esc(meal.recipe)}</div>
-        <div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">✏️ Редактировать</button></div>`;
-    } else {
-      html += `<div class="recipe-actions"><button class="small-btn" onclick="editRecipe('${id}')">+ Добавить рецепт</button></div>`;
-    }
-    
-    // Блок с фото блюда
-    html += `</div>
-      <div class="meal-photo-row">
-        ${meal.imageUrl ? `<img src="${meal.imageUrl}" class="meal-img-preview" onclick="viewImage('${meal.imageUrl}')" title="Посмотреть фото">` : ''}
-        <label class="small-btn" style="cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-          📷 ${meal.imageUrl ? 'Изменить фото' : 'Добавить фото блюда'}
-          <input type="file" accept="image/*" style="display: none;" onchange="handleMealImageUpload('${id}', this.files[0])">
-        </label>
-      </div>
-    </div>`; // Закрываем meal-fields
-
-    // Блоки пользователей
-    html += `<div class="profiles-meal-grid">`;
-    profiles.forEach(profile => {
-        const pItems = meal.userItems[profile.id] || [];
-        const pt = calculateMealTotals(meal, profile.id);
-        html += `<div class="profile-meal-section">
-            <div class="profile-meal-header">
-                <span>Для: ${esc(profile.name || 'Без имени')}</span>
-                <span class="stats">Вес: ${pt.totalGrams.toFixed(0)}г | Б: ${pt.totalProtein.toFixed(1)}г | Кл: ${pt.totalFiber.toFixed(1)}г | ${pt.totalKcal.toFixed(0)} ккал</span>
-            </div>`;
-        
-        if (pItems.length === 0) {
-            html += `<div class="empty-msg" style="font-size:0.8rem; padding:5px;">Нет продуктов</div>`;
-        } else {
-            html += `<table style="margin-top:0;"><thead><tr>
-              <th>Продукт</th><th>Кол-во</th><th style="width:70px;"></th>
-            </tr></thead><tbody>`;
-            pItems.forEach((item, idx) => {
-                const p = products.find(x => String(x.id) === String(item.productId));
-                if (!p) return;
-                const qtyDisplay = p.unitType === 'pc' && p.gramPerPiece
-                  ? `${(item.grams / p.gramPerPiece).toFixed(2)} шт (${item.grams.toFixed(0)} г)`
-                  : `${item.grams} г`;
-                html += `<tr>
-                    <td style="padding:6px 4px;">${esc(p.name)}</td>
-                    <td style="padding:6px 4px;">${qtyDisplay}</td>
-                    <td style="padding:6px 4px; text-align:right; white-space:nowrap;">
-                        <button class="small-btn" style="padding:2px 6px; font-size:0.7rem;" onclick="editMenuItem('${id}','${profile.id}',${idx})" title="Редактировать кол-во">✏️</button>
-                        <button class="delete-btn" style="padding:2px 6px; font-size:0.7rem; margin-left:4px;" onclick="removeItem('${id}','${profile.id}',${idx})" title="Удалить">✕</button>
-                    </td>
-                </tr>`;
-            });
-            html += `</tbody></table>`;
-        }
-
-        html += `<div class="add-item-row" style="margin-top:5px;">
-            <select id="select-${id}-${profile.id}" onchange="updateMealInputHint('${id}','${profile.id}')" style="font-size:0.85rem; padding:4px; flex:1;">
-                <option value="">-- Продукт --</option>
-                ${products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}
-            </select>
-            <input type="number" id="qty-${id}-${profile.id}" placeholder="Кол-во" style="width:70px; font-size:0.85rem; padding:4px;" min="0.01" step="0.01">
-            <span class="add-item-unit" id="unit-${id}-${profile.id}" style="font-size:0.8rem;"></span>
-            <button onclick="addItemToMeal('${id}','${profile.id}')" style="font-size:0.8rem; padding:4px 8px;">+</button>
-        </div>`;
-        
-        html += `</div>`; // close profile-meal-section
-    });
-    html += `</div>`; // close profiles-meal-grid
-
-    html += `</div>`; // close meal-card
-  });
-
-  // Общие итоги за день
-  const tDay = calculateDayTotals(date);
-  html += `<div class="day-summary" style="margin-bottom:15px;">
-    <div class="summary-item"><div class="label">Общий вес</div><div class="value">${tDay.totalGrams.toFixed(0)} г</div></div>
-    <div class="summary-item"><div class="label">Общие Белки</div><div class="value">${tDay.totalProtein.toFixed(1)} г</div></div>
-    <div class="summary-item"><div class="label">Общая Клетчатка</div><div class="value">${tDay.totalFiber.toFixed(1)} г</div></div>
-    <div class="summary-item"><div class="label">Общие Ккал</div><div class="value">${tDay.totalKcal.toFixed(0)}</div></div>
-  </div>`;
-
-  // Итоги по каждому пользователю за день
-  html += `<h3 style="margin-top:20px;">Итоги за день по пользователям</h3>`;
-  html += `<div class="norms" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">`;
-  profiles.forEach(p => {
-      const pt = calculateDayTotals(date, p.id);
-      html += `<div class="norm" style="text-align:left; padding:15px;">
-          <div class="label" style="font-size:1rem; margin-bottom:10px; color:var(--accent);">${esc(p.name || 'Без имени')}</div>
-          <div style="font-size:0.9rem; display:flex; flex-direction:column; gap:4px;">
-              <span>Вес: <strong>${pt.totalGrams.toFixed(0)} г</strong></span>
-              <span>Белки: <strong>${pt.totalProtein.toFixed(1)} г</strong></span>
-              <span>Клетчатка: <strong>${pt.totalFiber.toFixed(1)} г</strong></span>
-              <span>Калории: <strong>${pt.totalKcal.toFixed(0)} ккал</strong></span>
-          </div>
-      </div>`;
-  });
-  html += `</div>`;
-
-  return html;
-}
-
-/* ============ NAV ============ */
-function renderAll() { 
-  renderAboutSection(); 
-  renderProducts(); 
-  renderShoppingList();
-  renderMenu(); 
-  renderRecipes();
-  renderStock();
-}
-
-function showSection() {
-  const tabs = ['new', 'about', 'products', 'shopping', 'stock', 'menu', 'recipes'];
-  const [section, week, day] = location.hash.slice(1).split('/');
-  
-  const current = tabs.includes(section) ? section : 'new';
-  
-  if (current === 'new') {
-    dailyViewDate = toISO(new Date());
-  }
-  
-  const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v||'');
-  menuDay  = current==='menu' && isDate(day) ? day : null;
-  menuWeek = current==='menu' && isDate(week) ? mondayOf(menuDay||week) : null;
-  editingRecipes.clear();
-  
-  if (current === 'menu') {
-    renderMenu();
-  } else if (current === 'shopping') {
-    renderShoppingList();
-  } else if (current === 'stock') {
-    renderStock();
-  } else if (current === 'recipes') {
-    renderRecipes();
-  } else if (current === 'new') {
-    renderDailyMenu();
-  }
-  window.scrollTo(0,0);
-  
-  tabs.forEach(t => {
-    document.getElementById(`section-${t}`).classList.toggle('active', t===current);
-    const tabEl = document.querySelector(`.tab[data-tab="${t}"]`);
-    if (tabEl) tabEl.classList.toggle('active', t===current);
-  });
-
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
-}
-window.showSection = showSection;
-window.addEventListener('hashchange', showSection);
-
-/* ============ INIT / AUTH STATE ============ */
-onAuthStateChanged(auth, async (user) => {
-  if (user) {
-    currentUser = { id: user.uid, email: user.email };
-    document.getElementById('headerUserName').textContent = user.email;
-    document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('app').classList.remove('hidden');
-
-    try {
-      await loadUserData(user.uid);
-      await loadGlobalRecipes(); 
-    } catch (e) {
-      console.error('Ошибка загрузки данных:', e);
-    }
-
-    if (!location.hash || location.hash === '#') location.hash = '#new';
-    showSection();
-    renderAll();
-  } else {
-    currentUser = null;
-    profiles = [defaultProfile()];
-    products = [];
-    days = {};
-    recipes = [];
-    menuWeek = null;
-    menuDay = null;
-    dailyViewDate = toISO(new Date());
-    editingRecipes.clear();
-    tempRecipeItems = [];
-    pendingMealId = null;
-    currentRecipeFilter = 'all';
-    modalRecipeFilter = 'all';
-
-    document.getElementById('app').classList.add('hidden');
-    document.getElementById('authScreen').classList.remove('hidden');
-    document.getElementById('loginPhone').value = '';
-    document.getElementById('loginPassword').value = '';
-    document.getElementById('regPhone').value = '';
-    document.getElementById('regPassword').value = '';
-    document.getElementById('loginError').textContent = '';
-    document.getElementById('regError').textContent = '';
-  }
-});
-</script>
-</body>
-</html>
+      <div class="store-header"><span>🏪 ${esc(store)}</span></div

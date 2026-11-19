@@ -33,6 +33,8 @@ input,select,textarea{font-family:inherit}
 .burger-btn{background:none;border:none;font-size:1.8rem;color:var(--text);padding:0;display:flex;align-items:center;justify-content:center;transition:color .2s;line-height:1}
 .burger-btn:hover{color:var(--accent)}
 .user-info{display:flex;align-items:center;gap:12px;background:var(--card-bg);padding:8px 14px;border-radius:999px;border:1px solid var(--border);font-size:.9rem}
+#headerUserName{cursor:pointer;color:var(--accent);font-weight:600;padding:4px 8px;border-radius:6px;transition:background .2s}
+#headerUserName:hover{background:#eaf2f8}
 
 .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150;opacity:0;pointer-events:none;transition:opacity .3s}
 .sidebar-overlay.open{opacity:1;pointer-events:auto}
@@ -155,6 +157,8 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .day-controls { display:flex; gap:10px; align-items:center; justify-content:center; margin: 20px 0; flex-wrap: wrap; }
 .day-closed-badge { display:inline-block; background: var(--success); color:#fff; padding: 4px 12px; border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
 
+.view-mode-banner { background: #fff3cd; color: #856404; padding: 10px 16px; border-radius: 8px; margin-bottom: 12px; font-size: 0.9rem; font-weight: 600; border: 1px solid #ffeeba; }
+
 @media(max-width:600px){body{padding:12px}.app-header h1{font-size:1.2rem}.user-info{font-size:.8rem;padding:6px 10px}}
 </style>
 </head>
@@ -212,7 +216,7 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         <h1>🥗 Мой планировщик питания</h1>
       </div>
       <div class="user-info">
-        <span id="headerUserName"></span>
+        <span id="headerUserName" onclick="openOwnProfileModal()" title="Редактировать профиль"></span>
         <button class="small-btn" onclick="handleLogout()">Выйти</button>
       </div>
     </header>
@@ -220,10 +224,14 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
     <!-- ============ РАЗДЕЛ МЕНЮ (ДАШБОРД НА СЕГОДНЯ) ============ -->
     <section class="section" id="section-new">
       <div class="card">
+        <div id="viewModeBanner"></div>
         <div class="week-toolbar" style="justify-content: space-between; margin-bottom: 15px;">
           <button class="small-btn" onclick="changeDailyDate(-1)">← Предыдущий</button>
           <h2 id="dailyMenuTitle" style="margin: 0; border: none; padding: 0;">Меню на сегодня</h2>
-          <button class="small-btn" onclick="changeDailyDate(1)">Следующий →</button>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button class="small-btn" id="usersMenuBtn" onclick="handleUsersMenuBtn()">Меню других пользователей</button>
+            <button class="small-btn" onclick="changeDailyDate(1)">Следующий →</button>
+          </div>
         </div>
         <div id="dailyMenuContainer" class="daily-menu-grid"></div>
         <div id="dailyDayControls" class="day-controls"></div>
@@ -447,10 +455,54 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
   </div>
 </div>
 
+<!-- ============ USERS LIST MODAL ============ -->
+<div id="usersModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Меню других пользователей</h3>
+    <input type="text" id="usersSearch" placeholder="Поиск по ФИО..." oninput="filterUsersList()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:15px;font-size:0.95rem;">
+    <div id="usersList" style="max-height: 400px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+      <div class="empty-msg">Загрузка...</div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="small-btn" onclick="closeUsersModal()">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OWN PROFILE MODAL ============ -->
+<div id="ownProfileModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Мой профиль</h3>
+    <div class="form-grid">
+      <label style="grid-column: 1 / -1;">ФИО
+        <input type="text" id="ownName" placeholder="Фамилия Имя Отчество">
+      </label>
+      <label>Дата рождения
+        <input type="date" id="ownBirthDate">
+      </label>
+      <label>Email (логин)
+        <input type="email" id="ownEmail">
+      </label>
+      <label style="grid-column: 1 / -1;">Текущий пароль (нужен только для смены email или пароля)
+        <input type="password" id="ownCurrentPassword" autocomplete="current-password">
+      </label>
+      <label style="grid-column: 1 / -1;">Новый пароль (оставьте пустым, чтобы не менять)
+        <input type="password" id="ownNewPassword" autocomplete="new-password">
+      </label>
+    </div>
+    <div class="auth-error" id="ownProfileError"></div>
+    <div class="modal-actions">
+      <button type="button" class="small-btn" onclick="closeOwnProfileModal()">Отмена</button>
+      <button type="button" class="primary-btn" onclick="saveOwnProfile()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import {
   auth, db,
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  updateEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider,
   doc, getDoc, setDoc,
   collection, addDoc, updateDoc, deleteDoc, getDocs
 } from './firebase-config.js';
@@ -461,6 +513,12 @@ const MONTHS = ['января','февраля','марта','апреля','м�
 
 /* ============ STATE ============ */
 let currentUser = null;
+let authProfile = { name: '', email: '', birthDate: '' };
+let publicUsersCache = [];
+let viewingUserId = null;
+let viewingUserName = '';
+let savedOwnState = null;
+
 let profiles = [];
 let products = [];
 let days = {};
@@ -487,25 +545,13 @@ function formatDate(iso) { const d = fromISO(iso); return `${d.getDate()} ${MONT
 function formatWeek(monday) { return `${formatDate(monday)} — ${formatDate(addDays(monday,6))}`; }
 
 /* ============ МИГРАЦИЯ СТАРЫХ ПРОДУКТОВ ============ */
-// Старый формат: unitType='g' (весовой), price=₽/100г, qty/stock в граммах.
-// Новый формат: unitType='weight', subUnit='kg'|'g', price=₽/кг (для weight), qty/stock в граммах.
 function migrateProduct(p) {
   if (!p || typeof p !== 'object') return p;
   if (p.unitType === 'g') {
-    return {
-      ...p,
-      unitType: 'weight',
-      subUnit: 'kg',
-      // ₽/100г → ₽/кг
-      price: (parseFloat(p.price) || 0) * 10,
-    };
+    return { ...p, unitType: 'weight', subUnit: 'kg', price: (parseFloat(p.price) || 0) * 10 };
   }
-  if (p.unitType === 'pc' && !p.subUnit) {
-    return { ...p, subUnit: 'g' };
-  }
-  if (p.unitType === 'weight' && !p.subUnit) {
-    return { ...p, subUnit: 'kg' };
-  }
+  if (p.unitType === 'pc' && !p.subUnit) return { ...p, subUnit: 'g' };
+  if (p.unitType === 'weight' && !p.subUnit) return { ...p, subUnit: 'kg' };
   return p;
 }
 
@@ -541,13 +587,9 @@ async function loadUserData(uid) {
   const snap = await getDoc(docRef);
   if (snap.exists()) {
     const d = snap.data();
-    if (d.profiles && Array.isArray(d.profiles)) {
-      profiles = d.profiles;
-    } else if (d.profile) {
-      profiles = [{ id: newId(), ...d.profile }];
-    } else {
-      profiles = [defaultProfile()];
-    }
+    if (d.profiles && Array.isArray(d.profiles)) profiles = d.profiles;
+    else if (d.profile) profiles = [{ id: newId(), ...d.profile }];
+    else profiles = [defaultProfile()];
     products = (Array.isArray(d.products) ? d.products : []).map(migrateProduct);
     days = (d.days && typeof d.days === 'object') ? d.days : {};
 
@@ -583,6 +625,7 @@ async function loadGlobalRecipes() {
 
 async function persist() {
   if (!auth.currentUser) return;
+  if (viewingUserId) return; // guard: не сохраняем, когда просматриваем чужое меню
   const docRef = doc(db, 'userData', auth.currentUser.uid);
   try {
     await setDoc(docRef, { profiles, products, days }, { merge: true });
@@ -639,6 +682,220 @@ window.handleLogout = async () => {
 window.toggleSidebar = () => {
   document.getElementById('sidebar').classList.toggle('open');
   document.getElementById('sidebarOverlay').classList.toggle('open');
+};
+
+/* ============ AUTH PROFILE (ФИО в шапке) ============ */
+function updateHeaderUserName() {
+  const el = document.getElementById('headerUserName');
+  if (!el) return;
+  const label = (authProfile && authProfile.name) ? authProfile.name : (currentUser ? currentUser.email : '');
+  el.textContent = label;
+}
+
+window.openOwnProfileModal = () => {
+  if (!auth.currentUser) return;
+  document.getElementById('ownName').value = authProfile.name || '';
+  document.getElementById('ownBirthDate').value = authProfile.birthDate || '';
+  document.getElementById('ownEmail').value = currentUser.email || '';
+  document.getElementById('ownCurrentPassword').value = '';
+  document.getElementById('ownNewPassword').value = '';
+  document.getElementById('ownProfileError').textContent = '';
+  document.getElementById('ownProfileModal').classList.remove('hidden');
+};
+
+window.closeOwnProfileModal = () => document.getElementById('ownProfileModal').classList.add('hidden');
+
+window.saveOwnProfile = async () => {
+  const errEl = document.getElementById('ownProfileError');
+  errEl.textContent = '';
+  const newName = document.getElementById('ownName').value.trim();
+  const newBirthDate = document.getElementById('ownBirthDate').value;
+  const newEmail = document.getElementById('ownEmail').value.trim();
+  const currentPassword = document.getElementById('ownCurrentPassword').value;
+  const newPassword = document.getElementById('ownNewPassword').value;
+
+  const emailChanged = newEmail && newEmail !== currentUser.email;
+  const passwordChanged = newPassword.length > 0;
+
+  try {
+    if (emailChanged || passwordChanged) {
+      if (!currentPassword) {
+        errEl.textContent = 'Для изменения email или пароля введите текущий пароль';
+        return;
+      }
+      const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+
+      if (emailChanged) {
+        await updateEmail(auth.currentUser, newEmail);
+        currentUser.email = newEmail;
+      }
+      if (passwordChanged) {
+        if (newPassword.length < 6) {
+          errEl.textContent = 'Новый пароль должен быть не менее 6 символов';
+          return;
+        }
+        await updatePassword(auth.currentUser, newPassword);
+      }
+    }
+
+    const updatedAuthProfile = {
+      name: newName,
+      email: currentUser.email,
+      birthDate: newBirthDate
+    };
+    await setDoc(doc(db, 'publicUsers', currentUser.id), updatedAuthProfile);
+    authProfile = updatedAuthProfile;
+    updateHeaderUserName();
+    closeOwnProfileModal();
+    alert('Профиль обновлён');
+  } catch (e) {
+    console.error(e);
+    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+      errEl.textContent = 'Неверный текущий пароль';
+    } else if (e.code === 'auth/email-already-in-use') {
+      errEl.textContent = 'Этот email уже используется другим пользователем';
+    } else if (e.code === 'auth/requires-recent-login') {
+      errEl.textContent = 'Требуется повторная авторизация. Выйдите и войдите заново, затем повторите попытку.';
+    } else if (e.code === 'auth/invalid-email') {
+      errEl.textContent = 'Некорректный email';
+    } else {
+      errEl.textContent = 'Ошибка: ' + e.message;
+    }
+  }
+};
+
+/* ============ USERS LIST / VIEW OTHER MENUS ============ */
+async function loadPublicUsers() {
+  try {
+    const snap = await getDocs(collection(db, 'publicUsers'));
+    publicUsersCache = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    // Убедимся, что текущий пользователь тоже в списке
+    if (auth.currentUser && !publicUsersCache.find(u => u.uid === auth.currentUser.uid)) {
+      publicUsersCache.push({
+        uid: auth.currentUser.uid,
+        name: authProfile.name || '',
+        email: currentUser.email,
+        birthDate: authProfile.birthDate || ''
+      });
+    }
+    publicUsersCache.sort((a, b) => {
+      const an = (a.name || a.email || '').toLowerCase();
+      const bn = (b.name || b.email || '').toLowerCase();
+      return an.localeCompare(bn, 'ru');
+    });
+  } catch (e) {
+    console.error('Ошибка загрузки пользователей:', e);
+    publicUsersCache = [];
+  }
+}
+
+window.openUsersModal = async () => {
+  document.getElementById('usersSearch').value = '';
+  document.getElementById('usersList').innerHTML = '<div class="empty-msg">Загрузка...</div>';
+  document.getElementById('usersModal').classList.remove('hidden');
+  await loadPublicUsers();
+  filterUsersList();
+};
+
+window.closeUsersModal = () => document.getElementById('usersModal').classList.add('hidden');
+
+window.filterUsersList = () => {
+  const q = (document.getElementById('usersSearch').value || '').toLowerCase().trim();
+  const list = document.getElementById('usersList');
+  if (!publicUsersCache || publicUsersCache.length === 0) {
+    list.innerHTML = '<div class="empty-msg">Список пользователей пуст или недоступен</div>';
+    return;
+  }
+  const filtered = publicUsersCache.filter(u => {
+    const hay = ((u.name || '') + ' ' + (u.email || '')).toLowerCase();
+    return !q || hay.includes(q);
+  });
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty-msg">Никого не найдено</div>';
+    return;
+  }
+  let html = '';
+  filtered.forEach(u => {
+    const isMe = auth.currentUser && u.uid === auth.currentUser.uid;
+    const displayName = u.name || u.email || 'Без имени';
+    html += `
+      <div class="card" style="margin-bottom:0; cursor:${isMe ? 'default' : 'pointer'}; opacity:${isMe ? '0.65' : '1'}; padding:14px;" ${!isMe ? `onclick="viewUserMenu('${u.uid}')"` : ''}>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+          <div style="min-width:0;">
+            <strong style="display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(displayName)}${isMe ? ' <span style="color:#888;font-weight:normal">(вы)</span>' : ''}</strong>
+            ${u.name && u.email ? `<div style="font-size:0.8rem;color:#888;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(u.email)}</div>` : ''}
+          </div>
+          ${!isMe ? `<span class="small-btn" style="flex-shrink:0;">Открыть меню →</span>` : ''}
+        </div>
+      </div>
+    `;
+  });
+  list.innerHTML = html;
+};
+
+window.viewUserMenu = async (uid) => {
+  if (!auth.currentUser) return;
+  if (uid === auth.currentUser.uid) {
+    // Это наш собственный uid — просто выходим из режима просмотра если были в нём
+    if (viewingUserId) exitViewMode(true);
+    closeUsersModal();
+    return;
+  }
+  try {
+    const snap = await getDoc(doc(db, 'userData', uid));
+    if (!snap.exists()) {
+      alert('Не удалось загрузить меню этого пользователя');
+      return;
+    }
+    const data = snap.data();
+    const theirProducts = (Array.isArray(data.products) ? data.products : []).map(migrateProduct);
+    const theirDays = data.days || {};
+    const theirProfiles = data.profiles || [];
+
+    if (!savedOwnState) {
+      savedOwnState = { profiles, products, days };
+    }
+    profiles = theirProfiles;
+    products = theirProducts;
+    days = theirDays;
+    viewingUserId = uid;
+    const u = publicUsersCache.find(x => x.uid === uid);
+    viewingUserName = u ? (u.name || u.email || 'Без имени') : 'Без имени';
+    dailyViewDate = toISO(new Date());
+
+    closeUsersModal();
+    // убедимся, что мы на разделе #new
+    if (location.hash !== '#new') {
+      location.hash = '#new';
+    } else {
+      renderDailyMenu();
+    }
+    showSection();
+  } catch (e) {
+    console.error(e);
+    alert('Ошибка загрузки меню: ' + e.message);
+  }
+};
+
+function exitViewMode(rerender = true) {
+  if (!viewingUserId) return;
+  if (savedOwnState) {
+    profiles = savedOwnState.profiles;
+    products = savedOwnState.products;
+    days = savedOwnState.days;
+    savedOwnState = null;
+  }
+  viewingUserId = null;
+  viewingUserName = '';
+  dailyViewDate = toISO(new Date());
+  if (rerender) renderDailyMenu();
+}
+window.exitViewMode = exitViewMode;
+
+window.handleUsersMenuBtn = () => {
+  if (viewingUserId) exitViewMode(true);
+  else openUsersModal();
 };
 
 /* ============ PROFILES LOGIC ============ */
@@ -760,11 +1017,8 @@ window.openProductModal = (id) => {
     document.getElementById('editFiber').value = p.fiber || 0;
     document.getElementById('editKcal').value = p.kcal || 0;
     document.getElementById('editUnitType').value = p.unitType === 'pc' ? 'pc' : 'weight';
-    if (p.unitType === 'pc') {
-      document.getElementById('editPcSubUnit').value = p.subUnit || 'g';
-    } else {
-      document.getElementById('editWeightSubUnit').value = p.subUnit || 'kg';
-    }
+    if (p.unitType === 'pc') document.getElementById('editPcSubUnit').value = p.subUnit || 'g';
+    else document.getElementById('editWeightSubUnit').value = p.subUnit || 'kg';
     document.getElementById('editPrice').value = p.price || 0;
     document.getElementById('editGramPerPiece').value = p.gramPerPiece || 0;
   } else {
@@ -811,7 +1065,6 @@ window.handleProductSave = async (event) => {
       ? document.getElementById('editPcSubUnit').value
       : document.getElementById('editWeightSubUnit').value;
 
-    // qty больше не вводится в форме: при редактировании сохраняем старое, при создании = 0
     const existing = id ? products.find(p => String(p.id) === String(id)) : null;
     const preservedQty = existing ? (parseFloat(existing.qty) || 0) : 0;
     const preservedStock = existing ? (parseFloat(existing.stock) || 0) : 0;
@@ -871,13 +1124,10 @@ window.deleteProduct = (id) => {
 };
 
 /* ============ ФОРМАТИРОВАНИЕ И РАСЧЁТЫ ============ */
-// Внутри: qty и stock — в нативных единицах (шт для pc, граммы для weight).
-// price: ₽/шт для pc, ₽/кг для weight.
 function productSubtotal(p) {
   const q = parseFloat(p.qty) || 0;
   const pr = parseFloat(p.price) || 0;
   if (p.unitType === 'pc') return q * pr;
-  // q в граммах, pr в ₽/кг
   return (q / 1000) * pr;
 }
 function formatQty(p) {
@@ -906,7 +1156,6 @@ window.closeImageModal = () => {
   setTimeout(() => { document.getElementById('fullImage').src = ''; }, 300); 
 };
 
-// Просмотр деталей блюда
 window.openMealDetails = (date, mealId) => {
   const meal = getDay(date).meals.find(m => m.id === mealId);
   if (!meal) return;
@@ -936,7 +1185,6 @@ window.openMealDetails = (date, mealId) => {
 };
 window.closeMealDetails = () => document.getElementById('mealDetailsModal').classList.add('hidden');
 
-// Просмотр деталей рецепта
 window.openRecipeDetails = (recipeId) => {
   const r = recipes.find(x => String(x.id) === String(recipeId));
   if (!r) return;
@@ -978,13 +1226,10 @@ function renderProducts() {
     (groups[key] ||= []).push(p);
   });
   const stores = Object.keys(groups).sort((a,b) => a.localeCompare(b,'ru'));
-  let grandTotal = 0;
   let html = '';
   stores.forEach(store => {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
-    const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
-    grandTotal += storeTotal;
-    // Убраны столбцы "Остаток" и "Кол-во"
+    // Итого по магазину и итого по всем — убраны по требованию
     html += `<div class="store-group">
       <div class="store-header"><span>🏪 ${esc(store)}</span></div>
       <div class="store-body"><table>
@@ -1012,11 +1257,8 @@ function renderProducts() {
         </td>
       </tr>`;
     });
-    html += `</tbody></table></div>
-      <div class="store-bottom-total"><span>Итого по магазину</span><span>${storeTotal.toFixed(2)} ₽</span></div>
-    </div>`;
+    html += `</tbody></table></div></div>`;
   });
-  html += `<div class="grand-total"><span>💰 Итого по всем магазинам</span><span>${grandTotal.toFixed(2)} ₽</span></div>`;
   c.innerHTML = html;
 }
 
@@ -1026,13 +1268,9 @@ window.editStock = (id) => {
   if (!p) return;
   const currentStock = parseFloat(p.stock) || 0;
   let promptMsg;
-  if (p.unitType === 'pc') {
-    promptMsg = `Введите новый остаток в штуках (текущий: ${currentStock} шт):`;
-  } else if (p.subUnit === 'kg') {
-    promptMsg = `Введите новый остаток в килограммах (текущий: ${(currentStock/1000).toFixed(3)} кг):`;
-  } else {
-    promptMsg = `Введите новый остаток в граммах (текущий: ${currentStock} г):`;
-  }
+  if (p.unitType === 'pc') promptMsg = `Введите новый остаток в штуках (текущий: ${currentStock} шт):`;
+  else if (p.subUnit === 'kg') promptMsg = `Введите новый остаток в килограммах (текущий: ${(currentStock/1000).toFixed(3)} кг):`;
+  else promptMsg = `Введите новый остаток в граммах (текущий: ${currentStock} г):`;
   let newVal = prompt(promptMsg, p.unitType === 'pc' ? currentStock : (p.subUnit === 'kg' ? (currentStock/1000).toFixed(3) : currentStock));
   if (newVal !== null) {
     const val = parseFloat(newVal);
@@ -1112,11 +1350,8 @@ window.addToShoppingList = () => {
   if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
   const product = products.find(p => String(p.id) === String(productId));
   if (!product) return;
-  // Конвертация в нативную единицу (шт для pc, граммы для weight)
   let qtyNative = qty;
-  if (product.unitType === 'weight' && product.subUnit === 'kg') {
-    qtyNative = qty * 1000;
-  }
+  if (product.unitType === 'weight' && product.subUnit === 'kg') qtyNative = qty * 1000;
   product.qty = (parseFloat(product.qty) || 0) + qtyNative;
   persist();
   renderShoppingList();
@@ -1170,9 +1405,11 @@ function renderShoppingList() {
   });
   const stores = Object.keys(groups).sort((a,b) => a.localeCompare(b,'ru'));
   let html = '';
+  let grandTotal = 0;
   stores.forEach(store => {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
     const storeTotal = items.reduce((s,p) => s + productSubtotal(p), 0);
+    grandTotal += storeTotal;
     html += `<div class="store-group">
       <div class="store-header"><span>🏪 ${esc(store)}</span></div>
       <div class="store-body"><ul class="shopping-list">`;
@@ -1197,6 +1434,8 @@ function renderShoppingList() {
       <div class="store-bottom-total"><span>Итого по магазину</span><span>${storeTotal.toFixed(2)} ₽</span></div>
     </div>`;
   });
+  // Итого по всем магазинам — добавлено в список покупок
+  html += `<div class="grand-total"><span>💰 Итого по всем магазинам</span><span>${grandTotal.toFixed(2)} ₽</span></div>`;
   c.innerHTML = html;
 }
 
@@ -1480,7 +1719,6 @@ window.closeSelectRecipeModal = () => {
   pendingMealId = null;
 };
 
-// Применение рецепта — НЕ трогает склад и не проверяет остатки.
 window.applyRecipeToMeal = (recipeId) => {
   if (!pendingMealId) return;
   const recipe = recipes.find(r => String(r.id) === String(recipeId));
@@ -1658,7 +1896,7 @@ window.updateMealInputHint = (mealId, profileId) => {
   }
 };
 
-/* ============ СОХРАНЕНИЕ ПРИЁМА ПИЩИ (покупки + остатки) ============ */
+/* ============ СОХРАНЕНИЕ ПРИЁМА ПИЩИ ============ */
 window.saveMeal = (mealId) => {
   const meal = findMeal(mealId);
   if (!meal) return;
@@ -1685,14 +1923,11 @@ window.saveMeal = (mealId) => {
     const product = products.find(x => String(x.id) === String(pid));
     if (!product) return;
     const grams = productGrams[pid];
-    // Для штучных: qty/stock в штуках. Для весовых: qty/stock в граммах.
     const qtyToAdd = (product.unitType === 'pc' && product.gramPerPiece > 0)
-      ? grams / product.gramPerPiece   // шт
-      : grams;                          // г
-
+      ? grams / product.gramPerPiece
+      : grams;
     product.qty = (parseFloat(product.qty) || 0) + qtyToAdd;
     product.stock = (parseFloat(product.stock) || 0) + qtyToAdd;
-
     summary += `• ${product.name}: +${qtyToAdd.toFixed(2)} ${product.unitType === 'pc' ? 'шт' : 'г'}\n`;
   });
 
@@ -1705,8 +1940,9 @@ window.saveMeal = (mealId) => {
   alert(summary);
 };
 
-/* ============ АВТОСПИСАНИЕ СО СКЛАДА ПО ПРОШЕДШИМ ДНЯМ ============ */
+/* ============ АВТОСПИСАНИЕ ПО ПРОШЕДШИМ ДНЯМ ============ */
 function autoDeductPastDays() {
+  if (viewingUserId) return; // не списываем у чужого пользователя
   const today = toISO(new Date());
   let deducted = false;
 
@@ -1760,11 +1996,42 @@ function renderDailyMenu() {
   const c = document.getElementById('dailyMenuContainer');
   const title = document.getElementById('dailyMenuTitle');
   const controls = document.getElementById('dailyDayControls');
+  const banner = document.getElementById('viewModeBanner');
   if (!c || !title) return;
 
   const today = toISO(new Date());
-  if (dailyViewDate === today) title.textContent = 'Меню на сегодня';
-  else title.textContent = `Меню на ${formatDate(dailyViewDate)} (${weekdayName(dailyViewDate)})`;
+
+  // Обновляем текст кнопки режима просмотра
+  const btn = document.getElementById('usersMenuBtn');
+  if (btn) {
+    if (viewingUserId) {
+      btn.textContent = 'Моё меню';
+      btn.style.background = '#e8f5e9';
+      btn.style.borderColor = '#a5d6a7';
+      btn.style.color = '#2e7d32';
+    } else {
+      btn.textContent = 'Меню других пользователей';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }
+  }
+
+  // Заголовок и баннер
+  if (viewingUserId) {
+    title.textContent = `Меню: ${viewingUserName}`;
+    if (banner) {
+      banner.className = 'view-mode-banner';
+      banner.innerHTML = `👁 Вы просматриваете меню пользователя: <b>${esc(viewingUserName)}</b>. Только чтение. Нажмите «Моё меню», чтобы вернуться.`;
+    }
+  } else {
+    if (dailyViewDate === today) title.textContent = 'Меню на сегодня';
+    else title.textContent = `Меню на ${formatDate(dailyViewDate)} (${weekdayName(dailyViewDate)})`;
+    if (banner) {
+      banner.className = '';
+      banner.innerHTML = '';
+    }
+  }
 
   const day = getDay(dailyViewDate);
   let html = '';
@@ -2017,7 +2284,15 @@ function showSection() {
   const tabs = ['new', 'about', 'products', 'shopping', 'stock', 'menu', 'recipes'];
   const [section, week, day] = location.hash.slice(1).split('/');
   const current = tabs.includes(section) ? section : 'new';
-  if (current === 'new') dailyViewDate = toISO(new Date());
+
+  // Выходим из режима просмотра чужого меню при переходе в другие разделы
+  if (viewingUserId && current !== 'new') {
+    exitViewMode(false);
+  }
+
+  if (current === 'new') {
+    dailyViewDate = viewingUserId ? dailyViewDate : toISO(new Date());
+  }
 
   const isDate = v => /^\d{4}-\d{2}-\d{2}$/.test(v||'');
   menuDay  = current==='menu' && isDate(day) ? day : null;
@@ -2052,7 +2327,23 @@ window.addEventListener('hashchange', showSection);
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = { id: user.uid, email: user.email };
-    document.getElementById('headerUserName').textContent = user.email;
+
+    // Загружаем/создаём профиль авторизации в publicUsers
+    try {
+      const pubRef = doc(db, 'publicUsers', user.uid);
+      const pubSnap = await getDoc(pubRef);
+      if (pubSnap.exists()) {
+        authProfile = pubSnap.data();
+      } else {
+        authProfile = { name: '', email: user.email, birthDate: '' };
+        await setDoc(pubRef, authProfile);
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки профиля авторизации:', e);
+      authProfile = { name: '', email: user.email, birthDate: '' };
+    }
+    updateHeaderUserName();
+
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('app').classList.remove('hidden');
     try {
@@ -2067,6 +2358,12 @@ onAuthStateChanged(auth, async (user) => {
     renderAll();
   } else {
     currentUser = null;
+    authProfile = { name: '', email: '', birthDate: '' };
+    viewingUserId = null;
+    viewingUserName = '';
+    savedOwnState = null;
+    publicUsersCache = [];
+
     profiles = [defaultProfile()];
     products = [];
     days = {};
@@ -2079,6 +2376,7 @@ onAuthStateChanged(auth, async (user) => {
     pendingMealId = null;
     currentRecipeFilter = 'all';
     modalRecipeFilter = 'all';
+    document.getElementById('headerUserName').textContent = '';
     document.getElementById('app').classList.add('hidden');
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('loginPhone').value = '';

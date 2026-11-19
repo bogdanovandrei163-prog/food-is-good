@@ -138,11 +138,6 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
 .add-item-row button{padding:8px 14px;background:var(--success);color:#fff;border:none;border-radius:6px;font-weight:600}
 .add-item-row button:hover{background:#27ae60}
 .add-item-unit{color:#888;font-size:.85rem;align-self:center}
-.day-summary{background:#2c3e50;color:#fff;padding:20px;border-radius:12px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:15px;margin-top:20px}
-.summary-item{text-align:center}
-.summary-item .label{font-size:.8rem;opacity:.8;text-transform:uppercase;letter-spacing:1px}
-.summary-item .value{font-size:1.8rem;font-weight:700}
-.summary-item .goal{font-size:.85rem;opacity:.8}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:20px;z-index:250}
 .modal-content{background:var(--card-bg);border-radius:14px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
@@ -329,9 +324,10 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
           </select>
         </label>
         <label id="pcSubUnitLabel">Единица штучного товара
-          <select id="editPcSubUnit">
+          <select id="editPcSubUnit" onchange="updateUnitLabels()">
             <option value="g">Граммы</option>
             <option value="ml">Миллилитры</option>
+            <option value="pack">Штуки в пачке</option>
           </select>
         </label>
         <label id="weightSubUnitLabel" class="hidden">Единица весового товара
@@ -342,6 +338,9 @@ th{background:#f8fafc;font-weight:600;font-size:.85rem}
         </label>
         <label id="gramPerPieceLabel">Граммовка 1 шт (г/мл)
           <input type="number" id="editGramPerPiece" step="0.1" min="0" value="0">
+        </label>
+        <label id="piecesPerPackLabel" class="hidden">Штук в пачке (шт)
+          <input type="number" id="editPiecesPerPack" step="1" min="1" value="0">
         </label>
         <label><span id="priceLabelText">Цена за 1 шт (₽)</span>
           <input type="number" id="editPrice" step="0.01" min="0" value="0">
@@ -547,12 +546,13 @@ function formatWeek(monday) { return `${formatDate(monday)} — ${formatDate(add
 /* ============ МИГРАЦИЯ СТАРЫХ ПРОДУКТОВ ============ */
 function migrateProduct(p) {
   if (!p || typeof p !== 'object') return p;
-  if (p.unitType === 'g') {
-    return { ...p, unitType: 'weight', subUnit: 'kg', price: (parseFloat(p.price) || 0) * 10 };
+  let result = { ...p, piecesPerPack: parseFloat(p.piecesPerPack) || 0 };
+  if (result.unitType === 'g') {
+    result = { ...result, unitType: 'weight', subUnit: 'kg', price: (parseFloat(result.price) || 0) * 10 };
   }
-  if (p.unitType === 'pc' && !p.subUnit) return { ...p, subUnit: 'g' };
-  if (p.unitType === 'weight' && !p.subUnit) return { ...p, subUnit: 'kg' };
-  return p;
+  if (result.unitType === 'pc' && !result.subUnit) result.subUnit = 'g';
+  if (result.unitType === 'weight' && !result.subUnit) result.subUnit = 'kg';
+  return result;
 }
 
 /* ============ СЖАТИЕ ИЗОБРАЖЕНИЙ ============ */
@@ -625,7 +625,7 @@ async function loadGlobalRecipes() {
 
 async function persist() {
   if (!auth.currentUser) return;
-  if (viewingUserId) return; // guard: не сохраняем, когда просматриваем чужое меню
+  if (viewingUserId) return;
   const docRef = doc(db, 'userData', auth.currentUser.uid);
   try {
     await setDoc(docRef, { profiles, products, days }, { merge: true });
@@ -684,12 +684,11 @@ window.toggleSidebar = () => {
   document.getElementById('sidebarOverlay').classList.toggle('open');
 };
 
-/* ============ AUTH PROFILE (ФИО в шапке) ============ */
+/* ============ AUTH PROFILE ============ */
 function updateHeaderUserName() {
   const el = document.getElementById('headerUserName');
   if (!el) return;
-  const label = (authProfile && authProfile.name) ? authProfile.name : (currentUser ? currentUser.email : '');
-  el.textContent = label;
+  el.textContent = (authProfile && authProfile.name) ? authProfile.name : (currentUser ? currentUser.email : '');
 }
 
 window.openOwnProfileModal = () => {
@@ -725,25 +724,13 @@ window.saveOwnProfile = async () => {
       }
       const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
       await reauthenticateWithCredential(auth.currentUser, credential);
-
-      if (emailChanged) {
-        await updateEmail(auth.currentUser, newEmail);
-        currentUser.email = newEmail;
-      }
+      if (emailChanged) { await updateEmail(auth.currentUser, newEmail); currentUser.email = newEmail; }
       if (passwordChanged) {
-        if (newPassword.length < 6) {
-          errEl.textContent = 'Новый пароль должен быть не менее 6 символов';
-          return;
-        }
+        if (newPassword.length < 6) { errEl.textContent = 'Новый пароль должен быть не менее 6 символов'; return; }
         await updatePassword(auth.currentUser, newPassword);
       }
     }
-
-    const updatedAuthProfile = {
-      name: newName,
-      email: currentUser.email,
-      birthDate: newBirthDate
-    };
+    const updatedAuthProfile = { name: newName, email: currentUser.email, birthDate: newBirthDate };
     await setDoc(doc(db, 'publicUsers', currentUser.id), updatedAuthProfile);
     authProfile = updatedAuthProfile;
     updateHeaderUserName();
@@ -751,17 +738,11 @@ window.saveOwnProfile = async () => {
     alert('Профиль обновлён');
   } catch (e) {
     console.error(e);
-    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-      errEl.textContent = 'Неверный текущий пароль';
-    } else if (e.code === 'auth/email-already-in-use') {
-      errEl.textContent = 'Этот email уже используется другим пользователем';
-    } else if (e.code === 'auth/requires-recent-login') {
-      errEl.textContent = 'Требуется повторная авторизация. Выйдите и войдите заново, затем повторите попытку.';
-    } else if (e.code === 'auth/invalid-email') {
-      errEl.textContent = 'Некорректный email';
-    } else {
-      errEl.textContent = 'Ошибка: ' + e.message;
-    }
+    if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') errEl.textContent = 'Неверный текущий пароль';
+    else if (e.code === 'auth/email-already-in-use') errEl.textContent = 'Этот email уже используется другим пользователем';
+    else if (e.code === 'auth/requires-recent-login') errEl.textContent = 'Требуется повторная авторизация. Выйдите и войдите заново.';
+    else if (e.code === 'auth/invalid-email') errEl.textContent = 'Некорректный email';
+    else errEl.textContent = 'Ошибка: ' + e.message;
   }
 };
 
@@ -770,7 +751,6 @@ async function loadPublicUsers() {
   try {
     const snap = await getDocs(collection(db, 'publicUsers'));
     publicUsersCache = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-    // Убедимся, что текущий пользователь тоже в списке
     if (auth.currentUser && !publicUsersCache.find(u => u.uid === auth.currentUser.uid)) {
       publicUsersCache.push({
         uid: auth.currentUser.uid,
@@ -811,10 +791,7 @@ window.filterUsersList = () => {
     const hay = ((u.name || '') + ' ' + (u.email || '')).toLowerCase();
     return !q || hay.includes(q);
   });
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty-msg">Никого не найдено</div>';
-    return;
-  }
+  if (filtered.length === 0) { list.innerHTML = '<div class="empty-msg">Никого не найдено</div>'; return; }
   let html = '';
   filtered.forEach(u => {
     const isMe = auth.currentUser && u.uid === auth.currentUser.uid;
@@ -836,41 +813,23 @@ window.filterUsersList = () => {
 
 window.viewUserMenu = async (uid) => {
   if (!auth.currentUser) return;
-  if (uid === auth.currentUser.uid) {
-    // Это наш собственный uid — просто выходим из режима просмотра если были в нём
-    if (viewingUserId) exitViewMode(true);
-    closeUsersModal();
-    return;
-  }
+  if (uid === auth.currentUser.uid) { if (viewingUserId) exitViewMode(true); closeUsersModal(); return; }
   try {
     const snap = await getDoc(doc(db, 'userData', uid));
-    if (!snap.exists()) {
-      alert('Не удалось загрузить меню этого пользователя');
-      return;
-    }
+    if (!snap.exists()) { alert('Не удалось загрузить меню этого пользователя'); return; }
     const data = snap.data();
     const theirProducts = (Array.isArray(data.products) ? data.products : []).map(migrateProduct);
     const theirDays = data.days || {};
     const theirProfiles = data.profiles || [];
-
-    if (!savedOwnState) {
-      savedOwnState = { profiles, products, days };
-    }
-    profiles = theirProfiles;
-    products = theirProducts;
-    days = theirDays;
+    if (!savedOwnState) savedOwnState = { profiles, products, days };
+    profiles = theirProfiles; products = theirProducts; days = theirDays;
     viewingUserId = uid;
     const u = publicUsersCache.find(x => x.uid === uid);
     viewingUserName = u ? (u.name || u.email || 'Без имени') : 'Без имени';
     dailyViewDate = toISO(new Date());
-
     closeUsersModal();
-    // убедимся, что мы на разделе #new
-    if (location.hash !== '#new') {
-      location.hash = '#new';
-    } else {
-      renderDailyMenu();
-    }
+    if (location.hash !== '#new') location.hash = '#new';
+    else renderDailyMenu();
     showSection();
   } catch (e) {
     console.error(e);
@@ -881,13 +840,10 @@ window.viewUserMenu = async (uid) => {
 function exitViewMode(rerender = true) {
   if (!viewingUserId) return;
   if (savedOwnState) {
-    profiles = savedOwnState.profiles;
-    products = savedOwnState.products;
-    days = savedOwnState.days;
+    profiles = savedOwnState.profiles; products = savedOwnState.products; days = savedOwnState.days;
     savedOwnState = null;
   }
-  viewingUserId = null;
-  viewingUserName = '';
+  viewingUserId = null; viewingUserName = '';
   dailyViewDate = toISO(new Date());
   if (rerender) renderDailyMenu();
 }
@@ -915,24 +871,18 @@ window.saveProfile = (index) => {
   p.weight = document.getElementById(`profWeight_${index}`).value.trim();
   p.activity = document.getElementById(`profActivity_${index}`).value;
   p.goal = document.getElementById(`profGoal_${index}`).value;
-  persist();
-  renderAboutSection();
-  renderMenu();
+  persist(); renderAboutSection(); renderMenu();
 };
 
 window.deleteProfile = (index) => {
   if (!confirm('Удалить этот профиль?')) return;
   profiles.splice(index, 1);
-  persist();
-  renderAboutSection();
-  renderMenu();
+  persist(); renderAboutSection(); renderMenu();
 };
 
 function calculateNorms(p) {
   if (!p) return null;
-  const age = parseFloat(p.age);
-  const height = parseFloat(p.height);
-  const weight = parseFloat(p.weight);
+  const age = parseFloat(p.age), height = parseFloat(p.height), weight = parseFloat(p.weight);
   if (!age || !height || !weight) return null;
   const bmr = 10*weight + 6.25*height - 5*age + (p.sex === 'male' ? 5 : -161);
   const tdee = bmr * parseFloat(p.activity || 1.2);
@@ -1021,11 +971,13 @@ window.openProductModal = (id) => {
     else document.getElementById('editWeightSubUnit').value = p.subUnit || 'kg';
     document.getElementById('editPrice').value = p.price || 0;
     document.getElementById('editGramPerPiece').value = p.gramPerPiece || 0;
+    document.getElementById('editPiecesPerPack').value = p.piecesPerPack || 0;
   } else {
     document.getElementById('productModalTitle').textContent = 'Новый продукт';
     document.getElementById('editUnitType').value = 'pc';
     document.getElementById('editPcSubUnit').value = 'g';
     document.getElementById('editWeightSubUnit').value = 'kg';
+    document.getElementById('editPiecesPerPack').value = 0;
   }
   updateUnitLabels();
   modal.classList.remove('hidden');
@@ -1039,6 +991,10 @@ window.updateUnitLabels = () => {
   document.getElementById('pcSubUnitLabel').classList.toggle('hidden', !isPc);
   document.getElementById('weightSubUnitLabel').classList.toggle('hidden', isPc);
   document.getElementById('gramPerPieceLabel').classList.toggle('hidden', !isPc);
+
+  const isPack = isPc && document.getElementById('editPcSubUnit').value === 'pack';
+  document.getElementById('piecesPerPackLabel').classList.toggle('hidden', !isPack);
+
   document.getElementById('priceLabelText').textContent = isPc ? 'Цена за 1 шт (₽)' : 'Цена за 1 кг (₽)';
 };
 
@@ -1065,6 +1021,17 @@ window.handleProductSave = async (event) => {
       ? document.getElementById('editPcSubUnit').value
       : document.getElementById('editWeightSubUnit').value;
 
+    let piecesPerPack = 0;
+    if (unitType === 'pc' && subUnit === 'pack') {
+      piecesPerPack = parseFloat(document.getElementById('editPiecesPerPack').value) || 0;
+      if (piecesPerPack < 1) {
+        alert('Укажите количество штук в пачке (минимум 1)');
+        btn.textContent = oldText;
+        btn.disabled = false;
+        return;
+      }
+    }
+
     const existing = id ? products.find(p => String(p.id) === String(id)) : null;
     const preservedQty = existing ? (parseFloat(existing.qty) || 0) : 0;
     const preservedStock = existing ? (parseFloat(existing.stock) || 0) : 0;
@@ -1079,6 +1046,7 @@ window.handleProductSave = async (event) => {
       subUnit,
       price: parseFloat(document.getElementById('editPrice').value) || 0,
       gramPerPiece: unitType === 'pc' ? (parseFloat(document.getElementById('editGramPerPiece').value) || 0) : 0,
+      piecesPerPack: piecesPerPack,
       imageUrl: imageUrl,
       qty: preservedQty,
       stock: preservedStock,
@@ -1116,30 +1084,41 @@ window.deleteProduct = (id) => {
       });
     }
   }));
-  persist();
-  renderProducts();
-  renderShoppingList(); 
-  renderMenu();
-  renderStock();
+  persist(); renderProducts(); renderShoppingList(); renderMenu(); renderStock();
 };
 
 /* ============ ФОРМАТИРОВАНИЕ И РАСЧЁТЫ ============ */
+// Внутренние единицы:
+// - pc (g/ml/pack): qty и stock — в ШТУКАХ
+// - weight: qty и stock — в ГРАММАХ
+// price: ₽/шт для pc, ₽/кг для weight
+
 function productSubtotal(p) {
   const q = parseFloat(p.qty) || 0;
   const pr = parseFloat(p.price) || 0;
   if (p.unitType === 'pc') return q * pr;
   return (q / 1000) * pr;
 }
+
+// В списке покупок показываем в единице создания
 function formatQty(p) {
   const q = parseFloat(p.qty) || 0;
-  if (p.unitType === 'pc') return `${q.toFixed(2)} шт`;
+  if (p.unitType === 'pc') {
+    if (p.subUnit === 'pack' && p.piecesPerPack > 0) {
+      return `${(q / p.piecesPerPack).toFixed(2)} пачек (${q.toFixed(0)} шт)`;
+    }
+    return `${q.toFixed(2)} шт`;
+  }
   if (p.subUnit === 'kg') return `${(q/1000).toFixed(2)} кг`;
   return `${q.toFixed(1)} г`;
 }
+
 function formatPrice(p) {
   const pr = (parseFloat(p.price) || 0).toFixed(2);
   return p.unitType === 'pc' ? `${pr} ₽/шт` : `${pr} ₽/кг`;
 }
+
+// На остатках показываем в нативной единице
 function formatStock(p) {
   const s = parseFloat(p.stock) || 0;
   if (p.unitType === 'pc') return `${s.toFixed(2)} шт`;
@@ -1229,19 +1208,25 @@ function renderProducts() {
   let html = '';
   stores.forEach(store => {
     const items = groups[store].slice().sort((a,b) => a.name.localeCompare(b.name,'ru'));
-    // Итого по магазину и итого по всем — убраны по требованию
+    // Убран столбец «Сумма»
     html += `<div class="store-group">
       <div class="store-header"><span>🏪 ${esc(store)}</span></div>
       <div class="store-body"><table>
         <thead><tr>
           <th>Название</th><th>Ккал/100г</th><th>Б/100г</th><th>Кл/100г</th>
-          <th>Цена</th><th>Сумма</th><th></th>
+          <th>Цена</th><th></th>
         </tr></thead><tbody>`;
     items.forEach(p => {
-      const subtotal = productSubtotal(p);
-      const unitHint = p.unitType === 'pc'
-        ? `1 шт = ${p.gramPerPiece || 0} ${p.subUnit === 'ml' ? 'мл' : 'г'}`
-        : (p.subUnit === 'kg' ? 'весовой (кг)' : 'весовой (г)');
+      let unitHint;
+      if (p.unitType === 'pc') {
+        if (p.subUnit === 'pack' && p.piecesPerPack > 0) {
+          unitHint = `1 пачка = ${p.piecesPerPack} шт${p.gramPerPiece ? `, 1 шт = ${p.gramPerPiece} г` : ''}`;
+        } else {
+          unitHint = `1 шт = ${p.gramPerPiece || 0} ${p.subUnit === 'ml' ? 'мл' : 'г'}`;
+        }
+      } else {
+        unitHint = p.subUnit === 'kg' ? 'весовой (кг)' : 'весовой (г)';
+      }
       html += `<tr>
         <td>
           <strong>${esc(p.name)}</strong>
@@ -1249,7 +1234,6 @@ function renderProducts() {
         </td>
         <td>${p.kcal}</td><td>${p.protein}</td><td>${p.fiber}</td>
         <td>${formatPrice(p)}</td>
-        <td><strong>${subtotal.toFixed(2)} ₽</strong></td>
         <td style="white-space:nowrap">
           <button class="small-btn" onclick="openProductModal('${p.id}')" title="Редактировать">✏️</button>
           ${p.imageUrl ? `<button class="small-btn" onclick="viewImage('${p.imageUrl}')" title="Посмотреть фото" style="background:#eaf2f8;border-color:#c8d6e5;margin:0 4px;">📷</button>` : ''}
@@ -1278,10 +1262,7 @@ window.editStock = (id) => {
       if (p.unitType === 'pc') p.stock = val;
       else if (p.subUnit === 'kg') p.stock = val * 1000;
       else p.stock = val;
-      persist();
-      renderStock();
-      renderProducts();
-      renderShoppingList();
+      persist(); renderStock(); renderProducts(); renderShoppingList();
     }
   }
 };
@@ -1291,9 +1272,7 @@ window.clearStock = (id) => {
   if (p) {
     if (!confirm(`Обнулить остаток продукта "${p.name}"?`)) return;
     p.stock = 0;
-    persist();
-    renderStock();
-    renderProducts();
+    persist(); renderStock(); renderProducts();
   }
 };
 
@@ -1307,17 +1286,13 @@ function renderStock() {
   }
   let html = `<table><thead><tr><th style="width: 60px;"></th><th>Название</th><th>Остаток</th><th style="width: 100px;">Действия</th></tr></thead><tbody>`;
   itemsInStock.sort((a,b) => a.name.localeCompare(b.name, 'ru')).forEach(p => {
-    const stockVal = parseFloat(p.stock) || 0;
-    let displayGrams = 0;
-    if (p.unitType === 'pc') displayGrams = stockVal * (parseFloat(p.gramPerPiece) || 0);
-    else displayGrams = stockVal;
     const imgHtml = p.imageUrl 
       ? `<img src="${p.imageUrl}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="viewImage('${p.imageUrl}')">`
       : `<div style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #f0f4f8; border-radius: 6px; border: 1px solid var(--border); color: #888; font-size: 1.2rem;">📦</div>`;
     html += `<tr>
       <td>${imgHtml}</td>
       <td><strong>${esc(p.name)}</strong></td>
-      <td style="color: var(--success); font-weight: 600;">${displayGrams.toFixed(1)} г</td>
+      <td style="color: var(--success); font-weight: 600;">${formatStock(p)}</td>
       <td style="white-space:nowrap">
         <button class="small-btn" onclick="editStock('${p.id}')" title="Редактировать остаток">✏️</button>
         <button class="delete-btn" onclick="clearStock('${p.id}')" title="Обнулить остаток">✕</button>
@@ -1336,8 +1311,13 @@ window.updateShopUnitHint = () => {
   if (!select || !unit || !qtyInput) return;
   const p = products.find(x => String(x.id) === String(select.value));
   if (!p) { unit.textContent = ''; qtyInput.placeholder = 'Кол-во'; return; }
-  if (p.unitType === 'pc') { unit.textContent = 'шт'; qtyInput.placeholder = 'Штук'; }
-  else if (p.subUnit === 'kg') { unit.textContent = 'кг'; qtyInput.placeholder = 'Килограмм'; }
+  if (p.unitType === 'pc') {
+    if (p.subUnit === 'pack' && p.piecesPerPack > 0) {
+      unit.textContent = 'пачка'; qtyInput.placeholder = 'Пачек';
+    } else {
+      unit.textContent = 'шт'; qtyInput.placeholder = 'Штук';
+    }
+  } else if (p.subUnit === 'kg') { unit.textContent = 'кг'; qtyInput.placeholder = 'Килограмм'; }
   else { unit.textContent = 'г'; qtyInput.placeholder = 'Грамм'; }
 };
 
@@ -1350,8 +1330,21 @@ window.addToShoppingList = () => {
   if (!qty || qty <= 0) { alert('Введите корректное количество'); return; }
   const product = products.find(p => String(p.id) === String(productId));
   if (!product) return;
+  
+  // Конвертация в нативную единицу:
+  // - pc + pack: пачки → штуки
+  // - pc + g/ml: штуки (как есть)
+  // - weight + kg: кг → граммы
+  // - weight + g: граммы (как есть)
   let qtyNative = qty;
-  if (product.unitType === 'weight' && product.subUnit === 'kg') qtyNative = qty * 1000;
+  if (product.unitType === 'pc') {
+    if (product.subUnit === 'pack' && product.piecesPerPack > 0) {
+      qtyNative = qty * product.piecesPerPack;
+    }
+  } else if (product.subUnit === 'kg') {
+    qtyNative = qty * 1000;
+  }
+  
   product.qty = (parseFloat(product.qty) || 0) + qtyNative;
   persist();
   renderShoppingList();
@@ -1366,10 +1359,7 @@ window.checkoutProduct = (id) => {
   if (p) {
     p.stock = (parseFloat(p.stock) || 0) + (parseFloat(p.qty) || 0);
     p.qty = 0;
-    persist();
-    renderShoppingList();
-    renderProducts();
-    renderStock();
+    persist(); renderShoppingList(); renderProducts(); renderStock();
   }
 };
 
@@ -1378,9 +1368,7 @@ window.removeFromShoppingList = (id) => {
   const p = products.find(x => String(x.id) === String(id));
   if (p) {
     p.qty = 0;
-    persist();
-    renderShoppingList();
-    renderProducts();
+    persist(); renderShoppingList(); renderProducts();
   }
 };
 
@@ -1434,7 +1422,6 @@ function renderShoppingList() {
       <div class="store-bottom-total"><span>Итого по магазину</span><span>${storeTotal.toFixed(2)} ₽</span></div>
     </div>`;
   });
-  // Итого по всем магазинам — добавлено в список покупок
   html += `<div class="grand-total"><span>💰 Итого по всем магазинам</span><span>${grandTotal.toFixed(2)} ₽</span></div>`;
   c.innerHTML = html;
 }
@@ -1448,11 +1435,9 @@ window.openRecipeModal = (id) => {
   document.getElementById('recipeImagePreviewContainer').classList.add('hidden');
   document.getElementById('recipeImagePreview').src = '';
   tempRecipeItems = [];
-
   const sel = document.getElementById('recipeIngSelect');
   sel.innerHTML = '<option value="">-- Выберите продукт --</option>' + 
     products.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
-
   if (id) {
     const r = recipes.find(x => String(x.id) === String(id));
     if (!r) return;
@@ -1820,8 +1805,7 @@ window.removeItem = (mealId, profileId, idx) => {
   if (meal.userItems && meal.userItems[profileId]) {
     meal.userItems[profileId].splice(idx, 1);
     meal.savedToShopping = false;
-    persist();
-    renderMenu();
+    persist(); renderMenu();
   }
 };
 
@@ -1841,8 +1825,7 @@ window.editMenuItem = (mealId, profileId, idx) => {
       if (p.unitType === 'pc' && p.gramPerPiece) item.grams = qty * p.gramPerPiece;
       else item.grams = qty;
       meal.savedToShopping = false;
-      persist();
-      renderMenu();
+      persist(); renderMenu();
     }
   }
 };
@@ -1923,6 +1906,7 @@ window.saveMeal = (mealId) => {
     const product = products.find(x => String(x.id) === String(pid));
     if (!product) return;
     const grams = productGrams[pid];
+    // Нативные единицы: для pc — штуки, для weight — граммы
     const qtyToAdd = (product.unitType === 'pc' && product.gramPerPiece > 0)
       ? grams / product.gramPerPiece
       : grams;
@@ -1932,17 +1916,13 @@ window.saveMeal = (mealId) => {
   });
 
   meal.savedToShopping = true;
-  persist();
-  renderShoppingList();
-  renderProducts();
-  renderStock();
-  renderMenu();
+  persist(); renderShoppingList(); renderProducts(); renderStock(); renderMenu();
   alert(summary);
 };
 
 /* ============ АВТОСПИСАНИЕ ПО ПРОШЕДШИМ ДНЯМ ============ */
 function autoDeductPastDays() {
-  if (viewingUserId) return; // не списываем у чужого пользователя
+  if (viewingUserId) return;
   const today = toISO(new Date());
   let deducted = false;
 
@@ -1978,11 +1958,7 @@ function autoDeductPastDays() {
     deducted = true;
   }
 
-  if (deducted) {
-    persist();
-    renderStock();
-    renderProducts();
-  }
+  if (deducted) { persist(); renderStock(); renderProducts(); }
 }
 
 /* ============ RENDER: DAILY MENU DASHBOARD ============ */
@@ -2000,8 +1976,6 @@ function renderDailyMenu() {
   if (!c || !title) return;
 
   const today = toISO(new Date());
-
-  // Обновляем текст кнопки режима просмотра
   const btn = document.getElementById('usersMenuBtn');
   if (btn) {
     if (viewingUserId) {
@@ -2017,7 +1991,6 @@ function renderDailyMenu() {
     }
   }
 
-  // Заголовок и баннер
   if (viewingUserId) {
     title.textContent = `Меню: ${viewingUserName}`;
     if (banner) {
@@ -2027,10 +2000,7 @@ function renderDailyMenu() {
   } else {
     if (dailyViewDate === today) title.textContent = 'Меню на сегодня';
     else title.textContent = `Меню на ${formatDate(dailyViewDate)} (${weekdayName(dailyViewDate)})`;
-    if (banner) {
-      banner.className = '';
-      banner.innerHTML = '';
-    }
+    if (banner) { banner.className = ''; banner.innerHTML = ''; }
   }
 
   const day = getDay(dailyViewDate);
@@ -2243,13 +2213,8 @@ function renderDayView(date) {
     ${(day.deducted || day.closed) ? '<span class="day-closed-badge">📉 Учтено в остатках</span>' : ''}
   </div>`;
 
-  const tDay = calculateDayTotals(date);
-  html += `<div class="day-summary" style="margin-bottom:15px;">
-    <div class="summary-item"><div class="label">Общий вес</div><div class="value">${tDay.totalGrams.toFixed(0)} г</div></div>
-    <div class="summary-item"><div class="label">Общие Белки</div><div class="value">${tDay.totalProtein.toFixed(1)} г</div></div>
-    <div class="summary-item"><div class="label">Общая Клетчатка</div><div class="value">${tDay.totalFiber.toFixed(1)} г</div></div>
-    <div class="summary-item"><div class="label">Общие Ккал</div><div class="value">${tDay.totalKcal.toFixed(0)}</div></div>
-  </div>`;
+  // Убран общий итог по всем блюдам снизу.
+  // Итоги по каждому пользователю остаются.
 
   html += `<h3 style="margin-top:20px;">Итоги за день по пользователям</h3>`;
   html += `<div class="norms" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">`;
@@ -2285,10 +2250,7 @@ function showSection() {
   const [section, week, day] = location.hash.slice(1).split('/');
   const current = tabs.includes(section) ? section : 'new';
 
-  // Выходим из режима просмотра чужого меню при переходе в другие разделы
-  if (viewingUserId && current !== 'new') {
-    exitViewMode(false);
-  }
+  if (viewingUserId && current !== 'new') exitViewMode(false);
 
   if (current === 'new') {
     dailyViewDate = viewingUserId ? dailyViewDate : toISO(new Date());
@@ -2299,9 +2261,7 @@ function showSection() {
   menuWeek = current==='menu' && isDate(week) ? mondayOf(menuDay||week) : null;
   editingRecipes.clear();
 
-  if (current === 'menu' || current === 'new') {
-    autoDeductPastDays();
-  }
+  if (current === 'menu' || current === 'new') autoDeductPastDays();
 
   if (current === 'menu') renderMenu();
   else if (current === 'shopping') renderShoppingList();
@@ -2328,13 +2288,11 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     currentUser = { id: user.uid, email: user.email };
 
-    // Загружаем/создаём профиль авторизации в publicUsers
     try {
       const pubRef = doc(db, 'publicUsers', user.uid);
       const pubSnap = await getDoc(pubRef);
-      if (pubSnap.exists()) {
-        authProfile = pubSnap.data();
-      } else {
+      if (pubSnap.exists()) authProfile = pubSnap.data();
+      else {
         authProfile = { name: '', email: user.email, birthDate: '' };
         await setDoc(pubRef, authProfile);
       }
